@@ -107,7 +107,10 @@ class LRS2Multi:
         self.filename = filename
         self.channel = channel
         self.spec_ext = f[6].data
-        self.get_barycor()
+        try:
+            self.get_barycor()
+        except:
+            self.barycor = 0.0
         self.wave = self.wave * (1. + self.barycor / 2.99892e8)
         self.fill_bad_fibers()
         
