@@ -137,8 +137,10 @@ class LRS2Multi:
     def get_barycor(self):
         tm = self.header['EXPTIME']
         tk = Time(self.header['DATE']) + tm / 2. * u.second
+        print(tk)
         posk = '%s %s' % (self.header['QRA'], self.header['QDEC'])
         sc = SkyCoord(posk, unit=(u.hourangle, u.deg), obstime=tk)
+        print(sc)
         loc = EarthLocation.of_site('McDonald Observatory')
         vcorr = sc.radial_velocity_correction(kind='barycentric',
                                               location=loc)
