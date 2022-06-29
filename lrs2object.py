@@ -80,7 +80,6 @@ class LRS2Object:
                                       func=func, local_kernel=local_kernel, 
                                       obj_radius=obj_radius,
                                       obj_sky_thresh=obj_sky_thresh)
-                    L.write_skysub()
             for i, L in enumerate(self.sides[key]):
                 if (L.channel == self.blue_other_channel) or (L.channel==self.red_other_channel):
                     if i == 0:
@@ -101,7 +100,6 @@ class LRS2Object:
                                       func=func, local_kernel=local_kernel, 
                                       obj_radius=obj_radius,
                                       obj_sky_thresh=obj_sky_thresh)
-                    L.write_skysub()
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
                          wave_window=None, use_aperture=True, radius=2.5,
                          model=None, func=np.nanmean, attr='skysub'):
