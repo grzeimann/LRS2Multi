@@ -64,6 +64,9 @@ class LRS2Multi:
         if uvmask.sum() > 0:
            data[52:115, uvmask] = np.nan
            datae[52:115, uvmask] = np.nan
+           C = data * 1.
+           C = convolve(data, Gaussian2DKernel(2.5))
+           data[52:115, uvmask] = C[52:115, uvmask]
         for i in np.arange(data.shape[0]):
             sel = np.isnan(data[i])
             for i in np.arange(1, 3):
