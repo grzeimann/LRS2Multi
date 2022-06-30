@@ -223,9 +223,6 @@ class LRS2Object:
         spec[spec == 0.] = np.nan
         nansel = np.isnan(spec)
         error[nansel] = np.nan
-        spec = interpolate_replace_nans(spec, Gaussian1DKernel(3.))
-        error = interpolate_replace_nans(error, Gaussian1DKernel(3.))
-        error[nansel] = error[nansel] * 3.
         flam_unit = (u.erg / u.cm**2 / u.s / u.AA)
         nd = NDData(spec, unit=flam_unit, mask=np.isnan(spec),
                     uncertainty=StdDevUncertainty(error))
