@@ -11,7 +11,7 @@ import os.path as op
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
-from astropy.convolution import convolve, Gaussian1DKernel
+from astropy.convolution import convolve, Gaussian1DKernel, interpolate_replace_nans
 import astropy.units as u
 from astropy.nddata import NDData, StdDevUncertainty
 from specutils import Spectrum1D, SpectralRegion
@@ -220,6 +220,10 @@ class LRS2Object:
         weights[weights < np.nanmax(weights, axis=0) * 0.2] = np.nan
         spec = np.nansum(specs * weights, axis=0) / np.nansum(weights, axis=0)
         error = np.sqrt(np.nansum(variances * weights, axis=0)) / np.nansum(weights, axis=0) 
+        nansel = np.isnan(spec)
+        spec = interpolate_replace_nans(spec, Gaussian1DKernel(3.))
+        error = interpolate_replace_nans(error, Gaussian1DKernel(3.))
+        error[nansel] = error[nansel] * 3.
         flam_unit = (u.erg / u.cm**2 / u.s / u.AA)
         nd = NDData(spec, unit=flam_unit, mask=np.isnan(spec),
                     uncertainty=StdDevUncertainty(error))
