@@ -348,6 +348,11 @@ class LRS2Multi:
             sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
         else:
             sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
+            self.centroid_x = xc
+            self.centroid_y = yc
+            self.adrx0 = self.adrx[np.argmin(np.abs(self.wave-detwave))]
+            self.adry0 = self.adry[np.argmin(np.abs(self.wave-detwave))]
+            
         self.skyfiber_sel = sky_sel
         self.fiber_sky = np.nanmedian(self.data[sky_sel], axis=0)
         sky = self.fiber_sky[np.newaxis, :] * np.ones((280,))[:, np.newaxis]
