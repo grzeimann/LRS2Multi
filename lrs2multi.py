@@ -204,7 +204,7 @@ class LRS2Multi:
         G = np.exp(-0.5 * D**2 / 0.8**2)
         G = G / np.nansum(G, axis=1)[:, np.newaxis]
         Y = np.nansum(Y[:, np.newaxis] * G, axis=1)
-        y = Y 
+        y = Y * 1e17
         vmax = np.nanpercentile(y, 99)
         vmin = np.nanpercentile(y, 1)
         xc, yc = self.find_centroid(detwave, wave_window, func=func, 
