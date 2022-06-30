@@ -57,10 +57,23 @@ class LRS2Object:
             except:
                 millum = 51.4
                 throughp = 1.0
-            L.log.info('%s: %s with %0.2fs, %0.2fcm2, %0.2f' % (op.basename(L.filename),
+            L.log.info('%s: %s with %0.2fs, %0.2fcm2, %0.2f' % (op.basename(L.filename)[:-5],
                                                L.header['OBJECT'], 
                                                L.header['EXPTIME'],
                                                millum, throughp))
+    
+    def setup_plotting(self):
+        nrows = int(len(list(self.sides.keys())) / 2)
+        fig, ax = plt.subplots(nrows, 2, figsize=((2.*7.4, nrows*3.5)),
+                               sharex=True, sharey=True,
+                               gridspec_kw={'wspace':0.01, 'hspace':0.15})
+        ax = ax.ravel()
+        i = 0
+        for key in self.sides.keys():
+            for L in self.sides[key]:
+                L.ax = ax[i]
+            i += 1
+        self.fig = fig
     
     def subtract_sky(self, xc=None, yc=None, sky_radius=5., detwave=None, 
                         wave_window=None, local=False, pca=False, 
@@ -173,7 +186,9 @@ class LRS2Object:
                          L.spec1D.flux, color='steelblue', lw=0.5)
                 plt.plot(L.spec1Dsky.spectral_axis, 
                          L.spec1Dsky.flux, color='firebrick', lw=0.5)
-    
+        if hasattr(self, 'spec1D'):
+            plt.plot(self.spec1D.spectral_axis.value, self.spec1D.flux.value, 
+                     'k-', lw=0.5)
         
     def calculate_sn(self, detwave=None, wave_window=None):
         self.SN = {}

@@ -209,17 +209,28 @@ class LRS2Multi:
         vmin = np.nanpercentile(y, 1)
         xc, yc = self.find_centroid(detwave, wave_window, func=func, 
                                     radius=radius)
-        plt.figure(figsize=(7.4, 3.5))
-        cax = plt.scatter(self.x, self.y, c=y, cmap=plt.get_cmap('coolwarm'),
+        cax = self.ax.scatter(self.x, self.y, c=y, cmap=plt.get_cmap('coolwarm'),
                           vmin=vmin, vmax=vmax, marker='h', s=250)
-        plt.scatter(xc, yc, marker='x', color='k', s=100)
+        self.ax.scatter(xc, yc, marker='x', color='k', s=100)
+        name = ' '.join(op.basename(self.filename)[:-5].split('_')[1:])
+        self.ax.text(0, 4, '%s' % name, fontsize=16, ha='center',
+                     va='bottom')
+        if hasattr(self, 'sn'):
+            self.ax.text(0, 3.0, 'SN = %0.1f' % self.sn, fontsize=16, ha='center',
+                         va='bottom', color='w')
         t = np.linspace(0, 2.*np.pi, 366)
         xp = radius * np.cos(t) + xc
         yp = radius * np.sin(t) + yc
-        plt.plot(xp, yp, 'k--', lw=2)
+        self.ax.tick_params(axis='both', which='both', direction='in')
+        self.ax.tick_params(axis='y', which='both', left=True, right=True)
+        self.ax.tick_params(axis='x', which='both', bottom=True, top=True)
+        self.ax.tick_params(axis='both', which='major', length=8, width=2)
+        self.ax.tick_params(axis='both', which='minor', length=5, width=1)
+        self.ax.minorticks_on()
+        self.ax.plot(xp, yp, 'k--', lw=2)
+        plt.sca(self.ax)
         plt.colorbar(cax)
-        plt.axis([-7., 7., -4., 4.])
-        plt.show()
+        plt.axis([-7., 7., -3.99, 3.99])
 
     def find_centroid(self, detwave=None, wave_window=None, quick_skysub=True,
                       radius=4, func=np.nanmean, attr='data'):
@@ -466,6 +477,7 @@ class LRS2Multi:
         wsel = np.abs(self.spec1D.spectral_axis.value - self.detwave) < self.wave_window
         signal = np.nansum(self.spec1D.flux.value[wsel])
         noise = np.sqrt(np.nansum(1./self.spec1D.uncertainty.array[wsel]))
+        self.sn = signal / noise
         return signal / noise
     
     def calculate_norm(self, detwave=None, wave_window=None, func=np.nanmean):
