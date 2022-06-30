@@ -61,12 +61,15 @@ class LRS2Multi:
         datae = f[3].data
         datae[f[3].data==0.] = np.nan
         uvmask = np.abs(wave-3736.0) < 1.6
-        ind1 = np.searchsorted(wave, 3740, side='right')
-        ind2 = np.searchsorted(wave, 3734, side='left')
         if uvmask.sum() > 0:
+            largmask = np.abs(wave-3736.0) < 5.6
+            data[:, uvmask] = np.nan
+            datae[:, uvmask] = np.nan
+            fill1 = np.nanmedian(data[:, largmask * (~uvmask)], axis=1)
+            fill2 = np.nanmedian(datae[:, largmask * (~uvmask)], axis=1) * 3.
             for j in np.where(uvmask)[0]:
-                data[:, j] = data[:, ind1] / 2. + data[:, ind2] / 2.
-                datae[:, j] = datae[:, ind1] / 2. + datae[:, ind2] / 2.
+                data[:, j] = fill1
+                datae[:, j] = fill2
         for i in np.arange(data.shape[0]):
             sel = np.isnan(data[i])
             for i in np.arange(1, 3):
