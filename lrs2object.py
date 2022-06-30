@@ -220,7 +220,9 @@ class LRS2Object:
         weights[weights < np.nanmax(weights, axis=0) * 0.2] = np.nan
         spec = np.nansum(specs * weights, axis=0) / np.nansum(weights, axis=0)
         error = np.sqrt(np.nansum(variances * weights, axis=0)) / np.nansum(weights, axis=0) 
+        spec[spec == 0.] = np.nan
         nansel = np.isnan(spec)
+        error[nansel] = np.nan
         spec = interpolate_replace_nans(spec, Gaussian1DKernel(3.))
         error = interpolate_replace_nans(error, Gaussian1DKernel(3.))
         error[nansel] = error[nansel] * 3.
