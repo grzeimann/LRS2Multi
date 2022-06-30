@@ -60,7 +60,7 @@ class LRS2Multi:
         data[f[3].data==0.] = np.nan
         datae = f[3].data
         datae[f[3].data==0.] = np.nan
-        uvmask = np.abs(wave-3736.0) < 1.6
+        uvmask = np.abs(wave-3736.0) < 2.6
         if uvmask.sum() > 0:
             data[:, uvmask] = np.nan
             datae[:, uvmask] = np.nan
