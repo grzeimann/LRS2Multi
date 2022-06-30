@@ -64,7 +64,6 @@ class LRS2Object:
     
     def setup_plotting(self):
         nrows = int(len(list(self.sides.keys())) / 2)
-        print(nrows)
         fig, ax = plt.subplots(nrows, 2, figsize=((2.*7.4, nrows*3.5)),
                                sharex=True, sharey=True,
                                gridspec_kw={'wspace':0.01, 'hspace':0.15})
@@ -73,6 +72,7 @@ class LRS2Object:
         for key in self.sides.keys():
             for L in self.sides[key]:
                 L.ax = ax[i]
+            print(i)
             i += 1
         self.fig = fig
     
