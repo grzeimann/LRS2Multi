@@ -63,7 +63,11 @@ class LRS2Object:
                                                millum, throughp))
     
     def setup_plotting(self):
-        nrows = int(np.ceil(len(list(self.sides.keys())) / 2.))
+        N = len(list(self.sides.keys()))
+        remove = False
+        if N % 2 == 1:
+            remove = True
+        nrows = int(np.ceil(N / 2.))
         fig, ax = plt.subplots(nrows, 2, figsize=((2.*7.4, nrows*3.5)),
                                sharex=True, sharey=True,
                                gridspec_kw={'wspace':0.01, 'hspace':0.15})
@@ -73,6 +77,8 @@ class LRS2Object:
             for L in self.sides[key]:
                 L.ax = ax[i]
             i += 1
+        if remove:
+            ax[-1].remove()
         self.fig = fig
     
     def subtract_sky(self, xc=None, yc=None, sky_radius=5., detwave=None, 
