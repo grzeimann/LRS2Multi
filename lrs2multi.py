@@ -71,7 +71,7 @@ class LRS2Multi:
                 c[j] = convolve(c[j], G)
                 e[j] = convolve(e[j], G)
             data[:, uvmask] = c[:, uvmask]
-            datae[:, uvmask] = e[:, uvmask]
+            datae[:, uvmask] = e[:, uvmask] * 4.
         for i in np.arange(data.shape[0]):
             sel = np.isnan(data[i])
             for i in np.arange(1, 3):
