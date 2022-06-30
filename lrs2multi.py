@@ -64,8 +64,8 @@ class LRS2Multi:
         ind1 = np.searchsorted(wave, 3740, side='right')
         ind2 = np.searchsorted(wave, 3734, side='left')
         if uvmask.sum() > 0:
-            data[:, uvmask] = data[:, ind1] / 2. + data[ind2] / 2.
-            datae[:, uvmask] = datae[:, ind1] / 2. + datae[ind2] / 2.
+            data[:, uvmask] = data[:, ind1] / 2. + data[:, ind2] / 2.
+            datae[:, uvmask] = datae[:, ind1] / 2. + datae[:, ind2] / 2.
         for i in np.arange(data.shape[0]):
             sel = np.isnan(data[i])
             for i in np.arange(1, 3):
