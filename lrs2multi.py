@@ -62,8 +62,8 @@ class LRS2Multi:
         datae[f[3].data==0.] = np.nan
         uvmask = np.abs(wave-3736.0) < 1.6
         if uvmask.sum() > 0:
-            data[:, uvmask] = np.nan
-            datae[:, uvmask] = np.nan
+            # data[:, uvmask] = np.nan
+            # datae[:, uvmask] = np.nan
             # G = Gaussian1DKernel(3.)
             # c = data * 1.
             # e = datae * 1.
