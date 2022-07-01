@@ -412,17 +412,18 @@ class LRS2Multi:
                     cont_sub[i] = (self.skysub[i] - 
                                    self.get_continuum(self.skysub[i], 
                                                       ignore_waves, bins=bins))
-                    
+
+            # Only pick sky pixels 7 > the average of the sky continuum
+            skypix_alone = self.get_peaks_above_thresh(self.fiber_sky, 
+                                                  thresh=peakthresh)
+            skypix = (skypix_alone * (~ignore_waves))        
             # Fit PCA Model
             yK = cont_sub[self.skyfiber_sel] / self.normcurve
             yK[np.isnan(yK)] = 0.0
             pca = PCA(n_components=ncomp).fit(yK)
             Hk = pca.components_
             
-            # Only pick sky pixels 7 > the average of the sky continuum
-            skypix = (self.get_peaks_above_thresh(self.fiber_sky, 
-                                                  thresh=peakthresh) *
-                      (~ignore_waves))
+
             self.pca_sky = np.zeros(self.skysub.shape)
             # Fit residuals for PCA eigenvalues and subtract model
             for i in np.arange(self.skysub.shape[0]):
@@ -435,7 +436,7 @@ class LRS2Multi:
                 res = self.pca_fit(Hk, yp / self.normcurve, skypix)
                 ycopy = 0. * yp
                 ycopy[:] = res * self.normcurve
-                ycopy[~skypix] = 0.0
+                ycopy[~skypix_alone] = 0.0
                 self.pca_sky[i] = ycopy
             self.skysub = self.skysub - self.pca_sky
             
