@@ -415,7 +415,7 @@ class LRS2Multi:
             # Fit PCA Model
             yK = cont_sub[self.skyfiber_sel]
             yK[np.isnan(yK)] = 0.0
-            pca = PCA(n_components=ncomps).fit(yK)
+            pca = PCA(n_components=ncomp).fit(yK)
             Hk = pca.components_
             
             # Only pick sky pixels 7 > the average of the sky continuum
