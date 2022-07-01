@@ -352,11 +352,17 @@ class LRS2Multi:
         self.adrx0 = self.adrx[np.argmin(np.abs(self.wave-detwave))]
         self.adry0 = self.adry[np.argmin(np.abs(self.wave-detwave))]
         self.manual = True
+        
+    
+    def set_pca_wave_mask(self, lines, redshift, window=5.):
+        self.pca_wave_mask = np.zeros(self.wave.shape, dtype=bool)
+        for line in lines:
+            self.pca_wave_mask += np.abs(self.wave - line*(1+redshift)) < window
     
     def sky_subtraction(self, xc=None, yc=None, sky_radius=5., detwave=None, 
                         wave_window=None, local=False, pca=False, 
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
-                        obj_sky_thresh=1.):
+                        obj_sky_thresh=1., ncomps=25):
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
@@ -384,6 +390,8 @@ class LRS2Multi:
         ratio = self.fiber_obj / self.fiber_sky 
         ignore_waves = ratio > obj_sky_thresh
         ignore_waves = self.expand_mask(ignore_waves)
+        if hasattr(self, 'pca_wave_mask'):
+            ignore_waves += self.pca_wave_mask
         if local:
             back = self.skysub * 1.
             back[obj_sel] = np.nan
@@ -407,7 +415,7 @@ class LRS2Multi:
             # Fit PCA Model
             yK = cont_sub[self.skyfiber_sel]
             yK[np.isnan(yK)] = 0.0
-            pca = PCA(n_components=25).fit(yK)
+            pca = PCA(n_components=ncomps).fit(yK)
             Hk = pca.components_
             
             # Only pick sky pixels 7 > the average of the sky continuum
