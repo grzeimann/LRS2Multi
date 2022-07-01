@@ -370,14 +370,13 @@ class LRS2Multi:
         if self.manual:
             xc = self.centroid_x
             yc = self.centroid_y
-            sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
-        else:
+        if ((xc is None) and (yc is None)):
             xc, yc = self.find_centroid(detwave=detwave, wave_window=wave_window, 
                                         quick_skysub=True, radius=obj_radius,
                                         func=func)
-            sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
            
-            
+        sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
+
         self.skyfiber_sel = sky_sel
         self.fiber_sky = np.nanmedian(self.data[sky_sel], axis=0)
         sky = self.fiber_sky[np.newaxis, :] * np.ones((280,))[:, np.newaxis]
@@ -446,7 +445,7 @@ class LRS2Multi:
         if self.manual:
             xc = self.centroid_x
             yc = self.centroid_y        
-        else:
+        if ((xc is None) and (yc is None)):
             xc, yc = self.find_centroid(detwave=detwave, 
                                         wave_window=wave_window, 
                                         quick_skysub=True,
