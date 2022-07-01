@@ -128,7 +128,13 @@ class LRS2Object:
                 L.manual_extraction(xc=xc[cnt], yc=yc[cnt], detwave=detwave,
                                     wave_window=wave_window)
             cnt += 1
-                
+    
+    def set_pca_wave_mask(self, lines, redshift, window=5.):
+        for key in self.sides.keys():
+            for L in self.sides[key]:
+                L.set_pca_wave_mask(lines=lines, redshift=redshift,
+                                    window=window)
+
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
                          wave_window=None, use_aperture=True, radius=2.5,
                          model=None, func=np.nanmean, attr='skysub'):
