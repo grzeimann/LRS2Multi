@@ -180,7 +180,7 @@ class LRS2Object:
             for L in self.sides[key]:
                 if (L.channel == self.blue_detect_channel) or (L.channel==self.red_detect_channel):
                     L.log.info('%s: %0.2f' % (op.basename(L.filename), 
-                                              self.avgnorm / self.norms[key]))
+                                              self.norms[key] / self.avgnorm))
                 L.normalize(self.avgnorm / self.norms[key])
 
     def rectify(self, newwave):
