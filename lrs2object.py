@@ -230,6 +230,7 @@ class LRS2Object:
                 weights.append(self.SN[key])
         weights = np.array(weights)
         weights /= weights.sum()
+        print(weights)
         spec1D = self.sides[keys[0]][0].spec1D * weights[0]
         cnt = 0
         for key in self.sides.keys():
