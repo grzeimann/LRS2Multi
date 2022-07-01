@@ -117,6 +117,7 @@ class LRS2Multi:
             self.barycor = 0.0
         self.wave = self.wave * (1. + self.barycor / 2.99892e8)
         self.fill_bad_fibers()
+        self.manual = False
         
     def setup_logging(self, logname='lrs2multi'):
         '''Set up a logger for shuffle with a name ``lrs2 advanced``.
@@ -211,8 +212,12 @@ class LRS2Multi:
         y = Y * 1e17
         vmax = np.nanpercentile(y, 99)
         vmin = np.nanpercentile(y, 1)
-        xc, yc = self.find_centroid(detwave, wave_window, func=func, 
-                                    radius=radius)
+        if self.manual:
+            xc = self.centroid_x
+            yc = self.centroid_y
+        else:
+            xc, yc = self.find_centroid(detwave, wave_window, func=func, 
+                                        radius=radius)
         cax = self.ax.scatter(self.x, self.y, c=y, cmap=plt.get_cmap('coolwarm'),
                           vmin=vmin, vmax=vmax, marker='h', s=250)
         self.ax.scatter(xc, yc, marker='x', color='k', s=100)
@@ -333,6 +338,17 @@ class LRS2Multi:
             mask[:-i] += mask[i:]
         return mask
     
+    def manual_extraction(self, xc, yc, detwave=None, wave_window=None):
+        if detwave is None:
+            detwave = self.detwave
+        if wave_window is None:
+            wave_window = self.wave_window
+        self.centroid_x = xc
+        self.centroid_y = yc
+        self.adrx0 = self.adrx[np.argmin(np.abs(self.wave-detwave))]
+        self.adry0 = self.adry[np.argmin(np.abs(self.wave-detwave))]
+        self.manual = True
+    
     def sky_subtraction(self, xc=None, yc=None, sky_radius=5., detwave=None, 
                         wave_window=None, local=False, pca=False, 
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
@@ -341,17 +357,16 @@ class LRS2Multi:
             detwave = self.detwave
         if wave_window is None:
             wave_window = self.wave_window
-        if (xc is None) or (yc is None):
+        if self.manual:
+            xc = self.centroid_x
+            yc = self.centroid_y
+            sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
+        else:
             xc, yc = self.find_centroid(detwave=detwave, wave_window=wave_window, 
                                         quick_skysub=True, radius=obj_radius,
                                         func=func)
             sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
-        else:
-            sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
-            self.centroid_x = xc
-            self.centroid_y = yc
-            self.adrx0 = self.adrx[np.argmin(np.abs(self.wave-detwave))]
-            self.adry0 = self.adry[np.argmin(np.abs(self.wave-detwave))]
+           
             
         self.skyfiber_sel = sky_sel
         self.fiber_sky = np.nanmedian(self.data[sky_sel], axis=0)
@@ -416,7 +431,10 @@ class LRS2Multi:
             detwave = self.detwave
         if wave_window is None:
             wave_window = self.wave_window
-        if (xc is None) or (yc is None):
+        if self.manual:
+            xc = self.centroid_x
+            yc = self.centroid_y        
+        else:
             xc, yc = self.find_centroid(detwave=detwave, 
                                         wave_window=wave_window, 
                                         quick_skysub=True,
