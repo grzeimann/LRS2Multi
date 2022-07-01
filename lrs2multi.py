@@ -331,7 +331,7 @@ class LRS2Multi:
     
     def get_peaks_above_thresh(self, sky, thresh=7.):
         mask = sky > thresh * np.nanmedian(sky)
-        for i in np.arange(1, 6):
+        for i in np.arange(1, 3):
             mask[i:] += mask[:-i]
             mask[:-i] += mask[i:]
         return mask
