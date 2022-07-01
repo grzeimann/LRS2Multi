@@ -93,7 +93,7 @@ class LRS2Multi:
         self.x = f[5].data[:, 0] * 1.
         self.y = f[5].data[:, 1] * 1.
         self.wave = wave * 1.
-        self.norm = norm * 1.
+        self.normcurve = norm * 1.
         self.adrx = J(wave)
         self.adry = K(wave)
         self.adrx0 = None
