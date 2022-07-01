@@ -119,6 +119,14 @@ class LRS2Object:
                                       func=func, local_kernel=local_kernel, 
                                       obj_radius=obj_radius,
                                       obj_sky_thresh=obj_sky_thresh)
+    
+    def set_manual_extraction(self, xc, yc, detwave=None, 
+                              wave_window=None):
+        for key in self.sides.keys():
+            for L in self.sides[key]:
+                L.manual_extraction(xc=xc, yc=yc, detwave=detwave,
+                                    wave_window=wave_window)
+                
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
                          wave_window=None, use_aperture=True, radius=2.5,
                          model=None, func=np.nanmean, attr='skysub'):
