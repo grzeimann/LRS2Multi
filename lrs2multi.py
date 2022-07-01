@@ -414,7 +414,7 @@ class LRS2Multi:
                                                       ignore_waves, bins=bins))
                     
             # Fit PCA Model
-            yK = cont_sub[self.skyfiber_sel] / self.error[self.skyfiber_sel]
+            yK = cont_sub[self.skyfiber_sel] / self.normcurve
             yK[np.isnan(yK)] = 0.0
             pca = PCA(n_components=ncomp).fit(yK)
             Hk = pca.components_
@@ -432,9 +432,9 @@ class LRS2Multi:
                     yp[np.isnan(yp)] = 0.0
                 else: 
                     continue
-                res = self.pca_fit(Hk, yp / self.error[i], skypix)
+                res = self.pca_fit(Hk, yp / self.normcurve, skypix)
                 ycopy = 0. * yp
-                ycopy[:] = res * self.error[i]
+                ycopy[:] = res * self.normcurve
                 ycopy[~skypix] = 0.0
                 self.pca_sky[i] = ycopy
             self.skysub = self.skysub - self.pca_sky
