@@ -362,7 +362,7 @@ class LRS2Multi:
     def sky_subtraction(self, xc=None, yc=None, sky_radius=5., detwave=None, 
                         wave_window=None, local=False, pca=False, 
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
-                        obj_sky_thresh=1., ncomps=25):
+                        obj_sky_thresh=1., ncomp=25):
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
