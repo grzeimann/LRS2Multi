@@ -362,7 +362,8 @@ class LRS2Multi:
     def sky_subtraction(self, xc=None, yc=None, sky_radius=5., detwave=None, 
                         wave_window=None, local=False, pca=False, 
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
-                        obj_sky_thresh=1., ncomp=25, bins=25):
+                        obj_sky_thresh=1., ncomp=25, bins=25,
+                        peakthresh=7.):
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
@@ -419,7 +420,9 @@ class LRS2Multi:
             Hk = pca.components_
             
             # Only pick sky pixels 7 > the average of the sky continuum
-            skypix = self.get_peaks_above_thresh(self.fiber_sky) * (~ignore_waves)
+            skypix = (self.get_peaks_above_thresh(self.fiber_sky, 
+                                                  thresh=peakthresh) *
+                      (~ignore_waves))
             self.pca_sky = np.zeros(self.skysub.shape)
             # Fit residuals for PCA eigenvalues and subtract model
             for i in np.arange(self.skysub.shape[0]):
