@@ -235,7 +235,8 @@ class LRS2Object:
         for key in self.sides.keys():
             for L in self.sides[key]:
                 if cnt > 0:
-                    spec1D = spec1D + weights[cnt] * L.spec1D
+                    spec1D_2 = weights[cnt] * L.spec1D
+                    spec1D = spec1D + spec1D_2
                 cnt += 1
         self.spec1D = spec1D
         
