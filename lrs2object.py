@@ -84,7 +84,7 @@ class LRS2Object:
     def subtract_sky(self, xc=None, yc=None, sky_radius=5., detwave=None, 
                         wave_window=None, local=False, pca=False, 
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
-                        obj_sky_thresh=1.):
+                        obj_sky_thresh=1., ncomp=25):
         ''' Subtract Sky '''
         if detwave is None:
             detwave = self.detwave
@@ -98,7 +98,8 @@ class LRS2Object:
                                       local=local, pca=pca, 
                                       func=func, local_kernel=local_kernel, 
                                       obj_radius=obj_radius,
-                                      obj_sky_thresh=obj_sky_thresh)
+                                      obj_sky_thresh=obj_sky_thresh,
+                                      ncomp=ncomp)
             for i, L in enumerate(self.sides[key]):
                 if (L.channel == self.blue_other_channel) or (L.channel==self.red_other_channel):
                     if i == 0:
@@ -118,7 +119,8 @@ class LRS2Object:
                                       local=local, pca=pca, 
                                       func=func, local_kernel=local_kernel, 
                                       obj_radius=obj_radius,
-                                      obj_sky_thresh=obj_sky_thresh)
+                                      obj_sky_thresh=obj_sky_thresh,
+                                      ncomp=ncomp)
     
     def set_manual_extraction(self, xc, yc, detwave=None, 
                               wave_window=None):
