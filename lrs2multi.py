@@ -362,7 +362,7 @@ class LRS2Multi:
     def sky_subtraction(self, xc=None, yc=None, sky_radius=5., detwave=None, 
                         wave_window=None, local=False, pca=False, 
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
-                        obj_sky_thresh=1., ncomp=25):
+                        obj_sky_thresh=1., ncomp=25, bins=25):
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
@@ -409,7 +409,8 @@ class LRS2Multi:
             for i in np.arange(cont_sub.shape[0]):
                 if np.isfinite(self.skysub[i]).sum() > 100:
                     cont_sub[i] = (self.skysub[i] - 
-                                   self.get_continuum(self.skysub[i], ignore_waves))
+                                   self.get_continuum(self.skysub[i], 
+                                                      ignore_waves, bins=bins))
                     
             # Fit PCA Model
             yK = cont_sub[self.skyfiber_sel]
@@ -423,7 +424,8 @@ class LRS2Multi:
             # Fit residuals for PCA eigenvalues and subtract model
             for i in np.arange(self.skysub.shape[0]):
                 if np.isfinite(self.skysub[i]).sum() > 100:
-                    yp = self.skysub[i] - self.get_continuum(self.skysub[i], ignore_waves)
+                    yp = self.skysub[i] - self.get_continuum(self.skysub[i], 
+                                                       ignore_waves, bins=bins)
                     yp[np.isnan(yp)] = 0.0
                 else: 
                     continue
