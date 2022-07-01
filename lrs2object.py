@@ -122,10 +122,12 @@ class LRS2Object:
     
     def set_manual_extraction(self, xc, yc, detwave=None, 
                               wave_window=None):
+        cnt = 0
         for key in self.sides.keys():
             for L in self.sides[key]:
-                L.manual_extraction(xc=xc, yc=yc, detwave=detwave,
+                L.manual_extraction(xc=xc[cnt], yc=yc[cnt], detwave=detwave,
                                     wave_window=wave_window)
+            cnt += 1
                 
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
                          wave_window=None, use_aperture=True, radius=2.5,
