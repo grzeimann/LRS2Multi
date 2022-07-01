@@ -222,8 +222,24 @@ class LRS2Object:
                     self.SN[key] = L.calculate_sn(detwave, wave_window)
                     L.log.info('SN for %s: %0.2f' % (op.basename(L.filename),
                                self.SN[key]))
-
     def combine_spectra(self):
+        keys = list(self.sides.keys())
+        weights = []
+        for key in self.sides.keys():
+            for L in self.sides[key]:
+                weights.append(self.SN[key])
+        weights = np.array(weights)
+        weights /= weights.sum()
+        spec1D = self.sides[keys[0]][0] * weights[0]
+        cnt = 0
+        for key in self.sides.keys():
+            for L in self.sides[key]:
+                if cnt > 0:
+                    spec1D = spec1D + weights[cnt] * L.spec1D
+                cnt += 1
+        self.spec1D = spec1D
+        
+    def combine_spectra_v01(self):
         specs = []
         variances = []
         weights = []
@@ -247,6 +263,7 @@ class LRS2Object:
         self.spec1D = Spectrum1D(spectral_axis=wave*u.AA, 
                                  flux=nd.data*nd.unit, uncertainty=nd.uncertainty,
                                  mask=nd.mask)
+        
     def combine_cubes(self):
         for key in self.sides.keys():
             for L in self.sides[key]:
