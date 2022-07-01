@@ -222,26 +222,8 @@ class LRS2Object:
                     self.SN[key] = L.calculate_sn(detwave, wave_window)
                     L.log.info('SN for %s: %0.2f' % (op.basename(L.filename),
                                self.SN[key]))
-    def combine_spectra(self):
-        keys = list(self.sides.keys())
-        weights = []
-        for key in self.sides.keys():
-            for L in self.sides[key]:
-                weights.append(self.SN[key])
-        weights = np.array(weights)
-        weights /= weights.sum() / 2.
-        print(weights)
-        spec1D = self.sides[keys[0]][0].spec1D * weights[0]
-        cnt = 0
-        for key in self.sides.keys():
-            for L in self.sides[key]:
-                if cnt > 0:
-                    spec1D_2 =  L.spec1D * weights[cnt]
-                    spec1D = spec1D + spec1D_2
-                cnt += 1
-        self.spec1D = spec1D
         
-    def combine_spectra_v01(self):
+    def combine_spectra(self):
         specs = []
         variances = []
         weights = []
@@ -254,8 +236,9 @@ class LRS2Object:
         specs, weights, variances = [np.array(x) for x in 
                                      [specs, weights, variances]]
         weights[weights < np.nanmax(weights, axis=0) * 0.2] = np.nan
-        spec = np.nansum(specs * weights, axis=0) / np.nansum(weights, axis=0)
-        error = np.sqrt(np.nansum(variances * weights, axis=0)) / np.nansum(weights, axis=0) 
+        weights = weights / np.nansum(weights, axis=0)[np.newaxis, :]
+        spec = np.nansum(specs * weights, axis=0)
+        error = np.sqrt(np.nansum(variances * weights, axis=0))
         spec[spec == 0.] = np.nan
         nansel = np.isnan(spec)
         error[nansel] = np.nan
