@@ -11,15 +11,21 @@ import os.path as op
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
-from astropy.convolution import convolve, Gaussian1DKernel
-from astropy.convolution import Gaussian2DKernel, interpolate_replace_nans
 import astropy.units as u
 from astropy.nddata import NDData, StdDevUncertainty
-from specutils import Spectrum1D, SpectralRegion
+from specutils import Spectrum1D
 from astropy.table import Table
 
+
 class LRS2Object:
-    ''' Wrapper for reduction routines with processed data, multi*.fits '''
+    ''' Wrapper for reduction routines with processed data, multi*.fits 
+    
+    Examples
+    --------
+    
+    
+        
+    '''
     def __init__(self, filenames, detwave=6563., wave_window=10.,
                  red_detect_channel='red', blue_detect_channel='orange'):
         '''
@@ -27,8 +33,25 @@ class LRS2Object:
 
         Parameters
         ----------
-        filename : str
-            multi*.fits filename for reduction
+        filenames : list
+            Path of multi*.fits filename for reduction
+        detwave : float
+            The wavelength for the detection algorithm. The same wavelength is
+            used for both B and R observation so a common wavelength is 
+            required.
+        wave_window : float
+            The +/- Angstrom window for running detections
+        red_detect_channel : string
+            Should be 'red' or 'farred'
+        blue_detect_channel : string
+            Should be 'uv' or 'orange'
+            
+        Examples
+        --------
+        >>> folder = PROGRAM_FOLDER
+        >>> object = OBJECT_NAME
+        >>> filenames = get_filenames_for_program(folder, object)
+        >>> LRS2 = LRS2Multi(filenames)
         '''
         self.detwave = detwave
         self.wave_window = wave_window
@@ -58,12 +81,24 @@ class LRS2Object:
             except:
                 millum = 51.4
                 throughp = 1.0
-            L.log.info('%s: %s with %0.2fs, %0.2fcm2, %0.2f' % (op.basename(L.filename)[:-5],
-                                               L.header['OBJECT'], 
-                                               L.header['EXPTIME'],
-                                               millum, throughp))
+            L.log.info('%s: %s with %0.2fs, %0.2fcm2, %0.2f' %
+                       (op.basename(L.filename)[:-5], L.header['OBJECT'], 
+                        L.header['EXPTIME'], millum, throughp))
     
     def setup_plotting(self, forall=False):
+        '''
+        This will set up the figure and axes for making image plots
+
+        Parameters
+        ----------
+        forall : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        None.
+
+        '''
         N = len(list(self.sides.keys()))
         remove = False
         if N % 2 == 1:
@@ -94,7 +129,47 @@ class LRS2Object:
                         correct_ftf_from_skylines=False,
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
                         obj_sky_thresh=1., ncomp=25, bins=25, peakthresh=7.):
-        ''' Subtract Sky '''
+        '''
+        
+
+        Parameters
+        ----------
+        xc : TYPE, optional
+            DESCRIPTION. The default is None.
+        yc : TYPE, optional
+            DESCRIPTION. The default is None.
+        sky_radius : TYPE, optional
+            DESCRIPTION. The default is 5..
+        detwave : TYPE, optional
+            DESCRIPTION. The default is None.
+        wave_window : TYPE, optional
+            DESCRIPTION. The default is None.
+        local : TYPE, optional
+            DESCRIPTION. The default is False.
+        pca : TYPE, optional
+            DESCRIPTION. The default is False.
+        correct_ftf_from_skylines : TYPE, optional
+            DESCRIPTION. The default is False.
+        func : TYPE, optional
+            DESCRIPTION. The default is np.nanmean.
+        local_kernel : TYPE, optional
+            DESCRIPTION. The default is 7..
+        obj_radius : TYPE, optional
+            DESCRIPTION. The default is 3..
+        obj_sky_thresh : TYPE, optional
+            DESCRIPTION. The default is 1..
+        ncomp : TYPE, optional
+            DESCRIPTION. The default is 25.
+        bins : TYPE, optional
+            DESCRIPTION. The default is 25.
+        peakthresh : TYPE, optional
+            DESCRIPTION. The default is 7..
+
+        Returns
+        -------
+        None.
+
+        '''
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
@@ -137,6 +212,25 @@ class LRS2Object:
     
     def set_manual_extraction(self, xc, yc, detwave=None, 
                               wave_window=None):
+        '''
+        
+
+        Parameters
+        ----------
+        xc : TYPE
+            DESCRIPTION.
+        yc : TYPE
+            DESCRIPTION.
+        detwave : TYPE, optional
+            DESCRIPTION. The default is None.
+        wave_window : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
+        '''
         cnt = 0
         for key in self.sides.keys():
             for L in self.sides[key]:
@@ -153,7 +247,35 @@ class LRS2Object:
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
                          wave_window=None, use_aperture=True, radius=2.5,
                          model=None, func=np.nanmean, attr='skysub'):
-        ''' Extract Spectrum '''
+        '''
+        
+
+        Parameters
+        ----------
+        xc : TYPE, optional
+            DESCRIPTION. The default is None.
+        yc : TYPE, optional
+            DESCRIPTION. The default is None.
+        detwave : TYPE, optional
+            DESCRIPTION. The default is None.
+        wave_window : TYPE, optional
+            DESCRIPTION. The default is None.
+        use_aperture : TYPE, optional
+            DESCRIPTION. The default is True.
+        radius : TYPE, optional
+            DESCRIPTION. The default is 2.5.
+        model : TYPE, optional
+            DESCRIPTION. The default is None.
+        func : TYPE, optional
+            DESCRIPTION. The default is np.nanmean.
+        attr : TYPE, optional
+            DESCRIPTION. The default is 'skysub'.
+
+        Returns
+        -------
+        None.
+
+        '''
         for key in self.sides.keys():
             for L in self.sides[key]:
                 if (L.channel == self.blue_detect_channel) or (L.channel==self.red_detect_channel):
@@ -178,6 +300,23 @@ class LRS2Object:
                                        model=model,
                                        func=func, attr=attr)
     def calculate_norm(self, detwave=None, wave_window=None, func=np.nansum):
+        '''
+        
+
+        Parameters
+        ----------
+        detwave : TYPE, optional
+            DESCRIPTION. The default is None.
+        wave_window : TYPE, optional
+            DESCRIPTION. The default is None.
+        func : TYPE, optional
+            DESCRIPTION. The default is np.nansum.
+
+        Returns
+        -------
+        None.
+
+        '''
         for key in self.sides.keys():
             for L in self.sides[key]:
                 if (L.channel == self.blue_detect_channel) or (L.channel==self.red_detect_channel):
@@ -187,6 +326,23 @@ class LRS2Object:
         self.avgnorm = np.nanmean(list(self.norms.values()))
         
     def normalize(self, detwave=None, wave_window=None, func=np.nansum):
+        '''
+        
+
+        Parameters
+        ----------
+        detwave : TYPE, optional
+            DESCRIPTION. The default is None.
+        wave_window : TYPE, optional
+            DESCRIPTION. The default is None.
+        func : TYPE, optional
+            DESCRIPTION. The default is np.nansum.
+
+        Returns
+        -------
+        None.
+
+        '''
         self.calculate_norm(detwave=detwave, wave_window=wave_window, 
                             func=func)
         for key in self.sides.keys():
@@ -197,16 +353,54 @@ class LRS2Object:
                 L.normalize(self.avgnorm / self.norms[key])
 
     def rectify(self, newwave):
+        '''
+        
+
+        Parameters
+        ----------
+        newwave : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
         for key in self.sides.keys():
             for L in self.sides[key]:
                 L.rectify(newwave)
 
     def get_astrometry(self):
+        '''
+        
+
+        Returns
+        -------
+        None.
+
+        '''
         for key in self.sides.keys():
             for L in self.sides[key]:
                 L.get_astrometry()
 
     def make_cube(self, newwave, redkernel=1.8, bluekernel=0.1):
+        '''
+        
+
+        Parameters
+        ----------
+        newwave : TYPE
+            DESCRIPTION.
+        redkernel : TYPE, optional
+            DESCRIPTION. The default is 1.8.
+        bluekernel : TYPE, optional
+            DESCRIPTION. The default is 0.1.
+
+        Returns
+        -------
+        None.
+
+        '''
         for key in self.sides.keys():
             for L in self.sides[key]:
                 if (L.channel == 'red') or (L.channel == 'farred'):
@@ -217,6 +411,19 @@ class LRS2Object:
                 L.make_cube(newwave, kernel=kernel)
 
     def plot_spectrum(self, ax):
+        '''
+        
+
+        Parameters
+        ----------
+        ax : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
         for key in self.sides.keys():
             for L in self.sides[key]:
                 ax.plot(L.spec1D.spectral_axis, 
@@ -228,6 +435,21 @@ class LRS2Object:
                      'k-', lw=0.5)
         
     def calculate_sn(self, detwave=None, wave_window=None):
+        '''
+        
+
+        Parameters
+        ----------
+        detwave : TYPE, optional
+            DESCRIPTION. The default is None.
+        wave_window : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
+        '''
         self.SN = {}
         for key in self.sides.keys():
             for L in self.sides[key]:
@@ -237,6 +459,14 @@ class LRS2Object:
                                self.SN[key]))
         
     def combine_spectra(self):
+        '''
+        
+
+        Returns
+        -------
+        None.
+
+        '''
         specs = []
         variances = []
         weights = []
@@ -263,7 +493,14 @@ class LRS2Object:
                                  mask=nd.mask)
         
     def combine_cubes(self):
+        '''
         
+
+        Returns
+        -------
+        None.
+
+        '''
         specs = []
         variances = []
         weights = []
@@ -291,6 +528,21 @@ class LRS2Object:
                                  mask=nd.mask)
     
     def smooth_resolution(self, redkernel=2.25, bluekernel=0.1):
+        '''
+        
+
+        Parameters
+        ----------
+        redkernel : TYPE, optional
+            DESCRIPTION. The default is 2.25.
+        bluekernel : TYPE, optional
+            DESCRIPTION. The default is 0.1.
+
+        Returns
+        -------
+        None.
+
+        '''
         for key in self.sides.keys():
             for L in self.sides[key]:
                 if (L.channel == 'red') or (L.channel == 'farred'):
@@ -300,6 +552,19 @@ class LRS2Object:
                 L.smooth_resolution(kernel)
     
     def write_combined_spectrum(self, outname=None):
+        '''
+        
+
+        Parameters
+        ----------
+        outname : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
+        '''
         keys = list(self.sides.keys())
         L = self.sides[keys[0]][0]
         if outname is None:
