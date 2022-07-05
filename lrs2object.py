@@ -224,7 +224,7 @@ class LRS2Object:
                 ax.plot(L.spec1Dsky.spectral_axis, 
                          L.spec1Dsky.flux, color='firebrick', lw=0.5)
         if hasattr(self, 'spec1D'):
-            plt.ax(self.spec1D.spectral_axis.value, self.spec1D.flux.value, 
+            ax[i].plot(self.spec1D.spectral_axis.value, self.spec1D.flux.value, 
                      'k-', lw=0.5)
         
     def calculate_sn(self, detwave=None, wave_window=None):
