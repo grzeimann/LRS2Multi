@@ -80,10 +80,10 @@ class LRS2Multi:
             datae[i, sel] = np.nan
         badfibers = np.isnan(data).sum(axis=1) > 150.
         data[badfibers] = np.nan
-        
+        self.setup_logging()
         if channel == 'orange':
-            data[:140] = data[:140] / 1.025
-            data[140:] = data[140:] / 0.975
+              data[:140] = data[:140] / 1.025
+              data[140:] = data[140:] / 0.975
         J = interp1d(f[7].data[0], f[7].data[1], fill_value='extrapolate',
                        bounds_error=False)
         K = interp1d(f[7].data[0], f[7].data[2], fill_value='extrapolate',
@@ -197,7 +197,7 @@ class LRS2Multi:
     
     def plot_image(self, detwave=None, wave_window=None, quick_skysub=True,
                    func=np.nanmean, radius=4., attr='data',
-                   sky_radius=5.):
+                   sky_radius=5., sky_image=False):
         # Collapse spectrum 
         if detwave is None:
             detwave = self.detwave
@@ -205,6 +205,9 @@ class LRS2Multi:
             wave_window = self.wave_window
         Y = self.collapse_wave(detwave, wave_window, quick_skysub=False,
                                func=func, attr=attr)
+        if (sky_image * (hasattr(self, 'skypix'))):
+            Y = np.nanmean(self.data[:, self.skypix], axis=1)
+            Y = Y / np.nanmean(Y) * 1e-17
         D = np.sqrt((self.x[np.newaxis,:] - self.x[:, np.newaxis])**2 + 
                     (self.y[np.newaxis,:] - self.y[:, np.newaxis])**2)
         G = np.exp(-0.5 * D**2 / 0.8**2)
@@ -329,9 +332,9 @@ class LRS2Multi:
         res = np.dot(H.T, sol)
         return res
     
-    def get_peaks_above_thresh(self, sky, thresh=7.):
+    def get_peaks_above_thresh(self, sky, thresh=7., neigh=3):
         mask = sky > thresh * np.nanmedian(sky)
-        for i in np.arange(1, 3):
+        for i in np.arange(1, neigh):
             mask[i:] += mask[:-i]
             mask[:-i] += mask[i:]
         return mask
@@ -361,6 +364,7 @@ class LRS2Multi:
     
     def sky_subtraction(self, xc=None, yc=None, sky_radius=5., detwave=None, 
                         wave_window=None, local=False, pca=False, 
+                        correct_ftf_from_skylines=False,
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
                         obj_sky_thresh=1., ncomp=25, bins=25,
                         peakthresh=7.):
@@ -392,6 +396,21 @@ class LRS2Multi:
         ignore_waves = self.expand_mask(ignore_waves)
         if hasattr(self, 'pca_wave_mask'):
             ignore_waves += self.pca_wave_mask
+            
+        # Only pick sky pixels 7 > the average of the sky continuum
+        skypix_alone = self.get_peaks_above_thresh(self.fiber_sky, 
+                                              thresh=peakthresh)
+        skypix = (skypix_alone * (~ignore_waves)) 
+        self.skypix = skypix
+        if correct_ftf_from_skylines:
+            if skypix.sum() > 50.:
+                Y = np.nanmean(self.data[:, skypix], axis=1)
+                Y = Y / np.nanmean(Y)
+                D = self.data / Y[:, np.newaxis]
+                self.fiber_sky = np.nanmedian(D[sky_sel], axis=0)
+                sky = self.fiber_sky[np.newaxis, :] * np.ones((280,))[:, np.newaxis]
+                self.sky = sky
+                self.skysub = D - self.sky
         if local:
             back = self.skysub * 1.
             back[obj_sel] = np.nan
@@ -413,10 +432,7 @@ class LRS2Multi:
                                    self.get_continuum(self.skysub[i], 
                                                       ignore_waves, bins=bins))
 
-            # Only pick sky pixels 7 > the average of the sky continuum
-            skypix_alone = self.get_peaks_above_thresh(self.fiber_sky, 
-                                                  thresh=peakthresh)
-            skypix = (skypix_alone * (~ignore_waves))        
+                   
             # Fit PCA Model
             yK = cont_sub[self.skyfiber_sel] / self.normcurve
             yK[np.isnan(yK)] = 0.0
@@ -573,7 +589,7 @@ class LRS2Multi:
                        self.header['PARANGLE'],
                        xc, yc, x_scale=1., y_scale=1., kind='lrs2')
         self.raoff, self.decoff = self.get_ADR_RAdec(self.adrx+xc-self.adrx0, 
-                                                     self.adry+yc-self.adrx0, A)
+                                                     self.adry+yc-self.adry0, A)
         ra, dec = A.tp.wcs_pix2world(self.x-self.centroid_x, 
                                      self.y-self.centroid_y, 1)
         self.delta_ra = (np.cos(np.deg2rad(self.skycoord.dec.deg)) *
@@ -617,7 +633,7 @@ class LRS2Multi:
             f1.header['ROW%i' % (i+1)] = name
         f1.writeto(outname, overwrite=True)
         
-    def write_cube(self, Dcube, outname):
+    def write_cube(self, Dcube, wave, outname):
         '''
         Write data cube to fits file
         
@@ -639,7 +655,7 @@ class LRS2Multi:
         hdu = fits.PrimaryHDU(np.array(Dcube, dtype='float32'))
         hdu.header['CRVAL1'] = self.skycoord.ra.deg
         hdu.header['CRVAL2'] = self.skycoord.dec.deg
-        hdu.header['CRVAL3'] = self.wave[0]
+        hdu.header['CRVAL3'] = wave[0]
         hdu.header['CRPIX1'] = int(self.xgrid.shape[0]/2.)
         hdu.header['CRPIX2'] = int(self.xgrid.shape[1]/2.)
         hdu.header['CRPIX3'] = 1
@@ -652,7 +668,7 @@ class LRS2Multi:
         hdu.header['SPECSYS'] = 'TOPOCENT'
         hdu.header['CDELT1'] = (self.xgrid[0, 0] - self.xgrid[0, 1]) / 3600.
         hdu.header['CDELT2'] = (self.ygrid[1, 0] - self.ygrid[0, 0]) / 3600.
-        hdu.header['CDELT3'] = (self.wave[1] - self.wave[0])
+        hdu.header['CDELT3'] = (wave[1] - wave[0])
         for key in self.header.keys():
             if key in hdu.header:
                 continue

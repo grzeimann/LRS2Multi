@@ -11,7 +11,8 @@ import os.path as op
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
-from astropy.convolution import convolve, Gaussian1DKernel, interpolate_replace_nans
+from astropy.convolution import convolve, Gaussian1DKernel
+from astropy.convolution import Gaussian2DKernel, interpolate_replace_nans
 import astropy.units as u
 from astropy.nddata import NDData, StdDevUncertainty
 from specutils import Spectrum1D, SpectralRegion
@@ -62,12 +63,16 @@ class LRS2Object:
                                                L.header['EXPTIME'],
                                                millum, throughp))
     
-    def setup_plotting(self):
+    def setup_plotting(self, forall=False):
         N = len(list(self.sides.keys()))
         remove = False
         if N % 2 == 1:
-            remove = True
-        nrows = int(np.ceil(N / 2.))
+            if not forall:
+                remove = True
+        if forall:
+            nrows = int(N)
+        else:
+            nrows = int(np.ceil(N / 2.))
         fig, ax = plt.subplots(nrows, 2, figsize=((2.*7.4, nrows*3.5)),
                                sharex=True, sharey=True,
                                gridspec_kw={'wspace':0.01, 'hspace':0.15})
@@ -76,13 +81,17 @@ class LRS2Object:
         for key in self.sides.keys():
             for L in self.sides[key]:
                 L.ax = ax[i]
-            i += 1
+                if forall:
+                    i += 1
+            if not forall:
+                i += 1
         if remove:
             ax[-1].remove()
         self.fig = fig
     
     def subtract_sky(self, xc=None, yc=None, sky_radius=5., detwave=None, 
                         wave_window=None, local=False, pca=False, 
+                        correct_ftf_from_skylines=False,
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
                         obj_sky_thresh=1., ncomp=25, bins=25, peakthresh=7.):
         ''' Subtract Sky '''
@@ -100,7 +109,8 @@ class LRS2Object:
                                       obj_radius=obj_radius,
                                       obj_sky_thresh=obj_sky_thresh,
                                       ncomp=ncomp, bins=bins, 
-                                      peakthresh=peakthresh)
+                                      peakthresh=peakthresh,
+                                      correct_ftf_from_skylines=correct_ftf_from_skylines)
             for i, L in enumerate(self.sides[key]):
                 if (L.channel == self.blue_other_channel) or (L.channel==self.red_other_channel):
                     if i == 0:
@@ -122,7 +132,8 @@ class LRS2Object:
                                       obj_radius=obj_radius,
                                       obj_sky_thresh=obj_sky_thresh,
                                       ncomp=ncomp, bins=bins,
-                                      peakthresh=peakthresh)
+                                      peakthresh=peakthresh,
+                                      correct_ftf_from_skylines=correct_ftf_from_skylines)
     
     def set_manual_extraction(self, xc, yc, detwave=None, 
                               wave_window=None):
@@ -252,9 +263,32 @@ class LRS2Object:
                                  mask=nd.mask)
         
     def combine_cubes(self):
+        
+        specs = []
+        variances = []
+        weights = []
         for key in self.sides.keys():
             for L in self.sides[key]:
-                continue
+                wave = L.spec3D.spectral_axis.value
+                specs.append(L.spec3D.flux.value)
+                weights.append(self.SN[key] * np.isfinite(specs[-1]))
+                variances.append(1./L.spec3D.uncertainty.array)
+        L.log.info('Making combined cube')
+        specs, weights, variances = [np.array(x) for x in 
+                                     [specs, weights, variances]]
+        weights[weights < np.nanmax(weights, axis=0) * 0.2] = np.nan
+        weights = weights / np.nansum(weights, axis=0)[np.newaxis, :]
+        spec = np.nansum(specs * weights, axis=0)
+        error = np.sqrt(np.nansum(variances * weights, axis=0))
+        spec[spec == 0.] = np.nan
+        nansel = np.isnan(spec)
+        error[nansel] = np.nan
+        flam_unit = (u.erg / u.cm**2 / u.s / u.AA)
+        nd = NDData(spec, unit=flam_unit, mask=np.isnan(spec),
+                    uncertainty=StdDevUncertainty(error))
+        self.spec3D = Spectrum1D(spectral_axis=wave*u.AA, 
+                                 flux=nd.data*nd.unit, uncertainty=nd.uncertainty,
+                                 mask=nd.mask)
     
     def smooth_resolution(self, redkernel=2.25, bluekernel=0.1):
         for key in self.sides.keys():
@@ -304,3 +338,55 @@ class LRS2Object:
         for i, name in enumerate(names):
             f1.header['ROW%i' % (i+1)] = name
         f1.writeto(outname, overwrite=True)
+        
+    def write_cube(self, outname=None):
+        '''
+        Write data cube to fits file
+        
+        Parameters
+        ----------
+        wave : 1d numpy array
+            Wavelength for data cube
+        xgrid : 2d numpy array
+            x-coordinates for data cube
+        ygrid : 2d numpy array
+            y-coordinates for data cube
+        Dcube : 3d numpy array
+            Data cube, corrected for ADR
+        outname : str
+            Name of the outputted fits file
+        he : object
+            hdu header object to carry original header information
+        '''
+        keys = list(self.sides.keys())
+        L = self.sides[keys[-1]][0]
+        wave = self.spec3D.spectral_axis.value
+        data = np.moveaxis(self.spec3D.flux.value, -1, 0)
+        hdu = fits.PrimaryHDU(np.array(data, dtype='float32'))
+        hdu.header['CRVAL1'] = L.skycoord.ra.deg
+        hdu.header['CRVAL2'] = L.skycoord.dec.deg
+        hdu.header['CRVAL3'] = wave[0]
+        hdu.header['CRPIX1'] = int(L.xgrid.shape[0]/2.)
+        hdu.header['CRPIX2'] = int(L.xgrid.shape[1]/2.)
+        hdu.header['CRPIX3'] = 1
+        hdu.header['CTYPE1'] = 'RA---TAN'
+        hdu.header['CTYPE2'] = 'DEC--TAN'
+        hdu.header['CTYPE3'] = 'WAVE'
+        hdu.header['CUNIT1'] = 'deg'
+        hdu.header['CUNIT2'] = 'deg'
+        hdu.header['CUNIT3'] = 'Angstrom'
+        hdu.header['SPECSYS'] = 'TOPOCENT'
+        hdu.header['CDELT1'] = (L.xgrid[0, 0] - L.xgrid[0, 1]) / 3600.
+        hdu.header['CDELT2'] = (L.ygrid[1, 0] - L.ygrid[0, 0]) / 3600.
+        hdu.header['CDELT3'] = (wave[1] - wave[0])
+        for key in L.header.keys():
+            if key in hdu.header:
+                continue
+            if ('CCDSEC' in key) or ('DATASEC' in key):
+                continue
+            if ('BSCALE' in key) or ('BZERO' in key):
+                continue
+            hdu.header[key] = L.header[key]
+        if outname is None:
+            outname = L.header['QOBJECT'] + '_combined_cube.fits'
+        hdu.writeto(outname, overwrite=True)
