@@ -220,11 +220,11 @@ class LRS2Object:
         for key in self.sides.keys():
             for L in self.sides[key]:
                 ax.plot(L.spec1D.spectral_axis, 
-                         L.spec1D.flux, color='steelblue', lw=0.5)
+                         L.spec1D.flux*1e17, color='steelblue', lw=0.5)
                 ax.plot(L.spec1Dsky.spectral_axis, 
-                         L.spec1Dsky.flux, color='firebrick', lw=0.5)
+                         L.spec1Dsky.flux*1e17, color='firebrick', lw=0.5)
         if hasattr(self, 'spec1D'):
-            ax.plot(self.spec1D.spectral_axis.value, self.spec1D.flux.value, 
+            ax.plot(self.spec1D.spectral_axis.value, self.spec1D.flux.value*1e17, 
                      'k-', lw=0.5)
         
     def calculate_sn(self, detwave=None, wave_window=None):
