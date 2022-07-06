@@ -91,12 +91,9 @@ class LRS2Object:
 
         Parameters
         ----------
-        forall : TYPE, optional
-            DESCRIPTION. The default is False.
-
-        Returns
-        -------
-        None.
+        forall : boolean, optional
+            If True, all channels will set up for plotting rather than just 
+            the detection channels. The default is False.
 
         '''
         N = len(list(self.sides.keys()))
@@ -480,6 +477,7 @@ class LRS2Object:
                                      [specs, weights, variances]]
         weights[weights < np.nanmax(weights, axis=0) * 0.2] = np.nan
         weights = weights / np.nansum(weights, axis=0)[np.newaxis, :]
+        print(np.nanmean(weights, axis=1))
         spec = np.nansum(specs * weights, axis=0)
         error = np.sqrt(np.nansum(variances * weights, axis=0))
         spec[spec == 0.] = np.nan
