@@ -513,7 +513,7 @@ class LRS2Object:
         weights[weights < np.nanmax(weights, axis=0) * 0.2] = np.nan
         weights = weights / np.nansum(weights, axis=0)[np.newaxis, :]
         spec = np.nansum(specs * weights, axis=0)
-        error = np.sqrt(np.nansum(variances * weights, axis=0))
+        error = np.sqrt(np.nansum(variances * weights**2, axis=0))
         spec[spec == 0.] = np.nan
         nansel = np.isnan(spec)
         error[nansel] = np.nan
