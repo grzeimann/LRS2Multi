@@ -380,7 +380,8 @@ class LRS2Object:
             for L in self.sides[key]:
                 L.get_astrometry()
 
-    def make_cube(self, newwave, redkernel=1.8, bluekernel=0.1):
+    def make_cube(self, newwave, redkernel=1.8, bluekernel=0.1,
+                  scale=0.4, ran=[-7., 7., -7., 7.], radius=0.7, kernel=0.1):
         '''
         
 
@@ -405,7 +406,8 @@ class LRS2Object:
                 if (L.channel == 'orange') or (L.channel == 'uv'):
                     kernel = bluekernel
                 L.log.info('Making cube for %s' % (op.basename(L.filename)))
-                L.make_cube(newwave, kernel=kernel)
+                L.make_cube(newwave, kernel=kernel,
+                            scale=scale, ran=ran, radius=radius)
 
     def plot_spectrum(self, ax):
         '''
@@ -574,7 +576,7 @@ class LRS2Object:
                    self.spec1D.flux.value,
                    self.spec1D.uncertainty.array], 
                    names=names)
-        T.write('%s_combined_spectrum.dat' % L.header['QOBJECT'], format='ascii.fixed_width_two_line')
+        T.write(outname.replace('fits', 'dat'), format='ascii.fixed_width_two_line')
         f1 = fits.PrimaryHDU(A)
         he = L.header
         for key in he.keys():
