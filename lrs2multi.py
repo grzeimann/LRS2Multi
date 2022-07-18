@@ -110,6 +110,10 @@ class LRS2Multi:
         self.set_big_grid()
         self.filename = filename
         self.channel = channel
+        if ((self.channel == 'orange') or (self.channel == 'uv')):
+            self.side = 'blue'
+        else: 
+            self.side = 'red'
         self.spec_ext = f[6].data
         try:
             self.get_barycor()

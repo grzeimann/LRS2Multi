@@ -456,7 +456,41 @@ class LRS2Object:
                     self.SN[key] = L.calculate_sn(detwave, wave_window)
                     L.log.info('SN for %s: %0.2f' % (op.basename(L.filename),
                                self.SN[key]))
+    def get_single_spectrum_for_side(self, L_dict):
+        '''
         
+
+        Returns
+        -------
+        None.
+
+        '''
+        w, y, z = ([], [], [])
+        for L in L_dict:
+            wave = L.spec1D.spectral_axis.value
+            y.append(L.spec1D.flux.value)
+            z.append(1./L.spec1D.uncertainty.array)
+            if L.side == 'blue':
+                l1 = 4635.
+                l2 = 4645.
+                wsel = (wave >= l1) * (wave <= l2)
+            else:
+                l1 = 8275.
+                l2 = 8400.
+                wsel = (wave >= l1) * (wave <= l2)
+            if (L.channel == 'farred') or (L.channel == 'orange'):
+                _w = (wave - l1) / (l2 - l1)
+                w.append(_w)
+            else:
+                _w = (l2 - wave) / (l2 - l1)
+                w.append(_w)
+        sSp = np.nanmean(y, axis=0)
+        sSp[wsel] = y[0][wsel] * w[0][wsel] + y[1][wsel] * w[1][wsel]
+        esSp = np.nanmean(z, axis=0)
+        esSp[wsel] = np.sqrt((z[0][wsel] * w[0][wsel])**2 +
+                             (y[1][wsel] * w[1][wsel])**2)
+        return sSp, esSp
+    
     def combine_spectra(self):
         '''
         
@@ -472,9 +506,10 @@ class LRS2Object:
         for key in self.sides.keys():
             for L in self.sides[key]:
                 wave = L.spec1D.spectral_axis.value
-                specs.append(L.spec1D.flux.value)
-                weights.append(self.SN[key] * np.isfinite(specs[-1]))
-                variances.append(1./L.spec1D.uncertainty.array)
+            sSp, esSp = self.get_single_spectrum_for_side(self.sides[key])
+            specs.append(sSp)
+            weights.append(self.SN[key] * np.isfinite(specs[-1]))
+            variances.append(esSp)
         specs, weights, variances = [np.array(x) for x in 
                                      [specs, weights, variances]]
         weights[weights < np.nanmax(weights, axis=0) * 0.2] = np.nan
