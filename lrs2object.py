@@ -469,7 +469,7 @@ class LRS2Object:
         for L in L_dict:
             wave = L.spec1D.spectral_axis.value
             y.append(L.spec1D.flux.value)
-            z.append(L.spec1D.uncertainty.array)
+            z.append(1./L.spec1D.uncertainty.array)
             if L.side == 'blue':
                 l1 = 4635.
                 l2 = 4645.
@@ -487,8 +487,8 @@ class LRS2Object:
         sSp = np.nanmean(y, axis=0)
         sSp[wsel] = y[0][wsel] * w[0][wsel] + y[1][wsel] * w[1][wsel]
         esSp = np.nanmean(z, axis=0)
-        esSp[wsel] = np.sqrt((z[0][wsel] * w[0][wsel])**2 +
-                             (y[1][wsel] * w[1][wsel])**2)
+        esSp[wsel] = np.sqrt(z[0][wsel] * (w[0][wsel])**2 +
+                             y[1][wsel] * (w[1][wsel])**2)
         return sSp, esSp
     
     def combine_spectra(self):
