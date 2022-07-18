@@ -469,7 +469,7 @@ class LRS2Object:
         for L in L_dict:
             wave = L.spec1D.spectral_axis.value
             y.append(L.spec1D.flux.value)
-            z.append(1./L.spec1D.uncertainty.array)
+            z.append(L.spec1D.uncertainty.array)
             if L.side == 'blue':
                 l1 = 4635.
                 l2 = 4645.
