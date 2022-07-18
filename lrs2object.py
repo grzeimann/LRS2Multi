@@ -487,7 +487,7 @@ class LRS2Object:
         sSp = np.nanmean(y, axis=0)
         sSp[wsel] = y[0][wsel] * w[0][wsel] + y[1][wsel] * w[1][wsel]
         esSp = np.nanmean(z, axis=0)
-        esSp[wsel] = z[0][wsel] * (w[0][wsel]) + y[1][wsel] * (w[1][wsel])
+        esSp[wsel] = z[0][wsel] * (w[0][wsel]) + z[1][wsel] * (w[1][wsel])
         return sSp, esSp
     
     def combine_spectra(self):
