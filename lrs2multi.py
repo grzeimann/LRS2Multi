@@ -322,8 +322,6 @@ class LRS2Multi:
         xc = np.array([np.nanmean(xi) for xi in np.array_split(x, bins)])
         yc = np.array([np.nanmedian(xi) for xi in np.array_split(yz, bins)])
         sel = np.isfinite(yc)
-        self.log.info('I made it')
-        print(sel.sum(), xc, yc)
         if sel.sum() > bins/2.:
             I = interp1d(xc[sel], yc[sel], kind='linear', bounds_error=False,
                          fill_value='extrapolate')
