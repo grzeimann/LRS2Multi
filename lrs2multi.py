@@ -19,21 +19,19 @@ import os.path as op
 import matplotlib.pyplot as plt
 import warnings
 from astropy.io import fits
-from astropy.modeling.models import Gaussian1D, Gaussian2D
+from astropy.modeling.models import Gaussian2D
 from astropy.convolution import convolve, Gaussian1DKernel, Gaussian2DKernel
 from astropy.convolution import interpolate_replace_nans
 
 from astropy.modeling.fitting import LevMarLSQFitter
-from scipy.interpolate import interp1d, interp2d, griddata
-from scipy.signal import medfilt2d, medfilt
+from scipy.interpolate import interp1d, griddata
+from scipy.signal import medfilt2d
 from sklearn.decomposition import PCA
-from specutils import Spectrum1D, SpectralRegion
-from astropy.coordinates import SkyCoord
+from specutils import Spectrum1D
 from astrometry import Astrometry
 import astropy.units as u
 from astropy.nddata import NDData, StdDevUncertainty
 from specutils.manipulation import FluxConservingResampler, convolution_smooth
-from specutils.analysis import snr
 from astropy.coordinates import SkyCoord, EarthLocation
 from astropy.time import Time
 
@@ -41,8 +39,11 @@ from astropy.time import Time
 warnings.filterwarnings("ignore")
                       
 class LRS2Multi:
-    ''' Wrapper for reduction routines with processed data, multi*.fits '''
-    def __init__(self, filename):
+    ''' 
+    Wrapper for reduction routines with processed data, multi*.fits 
+    
+    '''
+    def __init__(self, filename, ignore_mask=False):
         '''
         Class initialization
 
@@ -57,9 +58,11 @@ class LRS2Multi:
         wave = f[6].data[0]
         norm = f[6].data[-1]
         data = f[0].data
-        data[f[3].data==0.] = np.nan
+        if not ignore_mask:
+            data[f[3].data==0.] = np.nan
         datae = f[3].data
-        datae[f[3].data==0.] = np.nan
+        if not ignore_mask:
+            datae[f[3].data==0.] = np.nan
         uvmask = np.abs(wave-3736.0) < 1.6
         if uvmask.sum() > 0:
            data[52:115, uvmask] = np.nan

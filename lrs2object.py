@@ -18,7 +18,8 @@ from astropy.table import Table
 
 
 class LRS2Object:
-    ''' Wrapper for reduction routines with processed data, multi*.fits 
+    ''' 
+    Wrapper class for LRS2Multi
     
     Examples
     --------
@@ -27,7 +28,8 @@ class LRS2Object:
         
     '''
     def __init__(self, filenames, detwave=6563., wave_window=10.,
-                 red_detect_channel='red', blue_detect_channel='orange'):
+                 red_detect_channel='red', blue_detect_channel='orange',
+                 ignore_mask=False):
         '''
         Class initialization
 
@@ -45,6 +47,10 @@ class LRS2Object:
             Should be 'red' or 'farred'
         blue_detect_channel : string
             Should be 'uv' or 'orange'
+        
+        Returns
+        -------
+        None.
             
         Examples
         --------
@@ -71,7 +77,7 @@ class LRS2Object:
             self.sides[observation] = []
 
         for filename, observation in zip(filenames, observations):
-            L = LRS2Multi(filename)
+            L = LRS2Multi(filename, ignore_mask=ignore_mask)
             L.detwave = detwave
             L.wave_window = wave_window
             self.sides[observation].append(L)
@@ -92,9 +98,12 @@ class LRS2Object:
         Parameters
         ----------
         forall : boolean, optional
-            If True, all channels will set up for plotting rather than just 
+            If True, all channels will be set up for plotting rather than just 
             the detection channels. The default is False.
-
+        
+        Returns
+        -------
+        None.
         '''
         N = len(list(self.sides.keys()))
         remove = False
@@ -131,36 +140,70 @@ class LRS2Object:
 
         Parameters
         ----------
-        xc : TYPE, optional
-            DESCRIPTION. The default is None.
-        yc : TYPE, optional
-            DESCRIPTION. The default is None.
-        sky_radius : TYPE, optional
-            DESCRIPTION. The default is 5..
-        detwave : TYPE, optional
-            DESCRIPTION. The default is None.
-        wave_window : TYPE, optional
-            DESCRIPTION. The default is None.
-        local : TYPE, optional
-            DESCRIPTION. The default is False.
-        pca : TYPE, optional
-            DESCRIPTION. The default is False.
-        correct_ftf_from_skylines : TYPE, optional
-            DESCRIPTION. The default is False.
-        func : TYPE, optional
-            DESCRIPTION. The default is np.nanmean.
-        local_kernel : TYPE, optional
-            DESCRIPTION. The default is 7..
-        obj_radius : TYPE, optional
-            DESCRIPTION. The default is 3..
-        obj_sky_thresh : TYPE, optional
-            DESCRIPTION. The default is 1..
-        ncomp : TYPE, optional
-            DESCRIPTION. The default is 25.
-        bins : TYPE, optional
-            DESCRIPTION. The default is 25.
-        peakthresh : TYPE, optional
-            DESCRIPTION. The default is 7..
+        xc : float, optional
+            The x-coordinate in IFU space for the object centroid. 
+            The default is None.
+        yc : float, optional
+            The y-coordinate in IFU space for the object centroid.  
+            The default is None.
+        sky_radius : float, optional
+            The radius in arcseconds away from the object for sky selection. 
+            The default is 5.
+        detwave : float, optional
+            The central wavelength for running object detection. 
+            The default is None.  If None, then the class attribute detwave is
+            used.
+        wave_window : float, optional
+            The wavelength window for running object detection. 
+            The default is None. If None, then the class attribute wave_window
+            is used.
+        local : boolean, optional
+            Perform a local sky subtraction in the fiber space using a 
+            Gaussian kernal of size "local_kernel" to fill in masked regions
+            of both bad pixels and the "obj_radius" region.  Then a median
+            filter of size "local_kernel" is used in fiber space.  If the
+            kernel is set to 7, then 7 fibers and 7 pixels in wavelength
+            are the kernel size.  The default is False.
+        pca : boolean, optional
+            Perform a pca sky subtraction.  This mode identifies wavelengths
+            dominated by sky lines and uses the fibers > "obj_radius" to 
+            model the pca components, "ncomp".  Wavelengths near emission
+            lines are ignored if a set_pca_wave_mask() was run prior to
+            subtraction.  The default is False.
+        correct_ftf_from_skylines : boolean, optional
+            The fiber normalization may be corrected using the intensity
+            of the sky lines across the FoV.  This mode does nothing if no
+            significant sky lines are found.  Use with extreme caution as the
+            results of this model depend highly on the contamination of a 
+            bright target in the FoV.  The default is False.
+        func : numpy function, optional
+            The function used for detection.  Depending on the application,
+            np.nanmedian or np.nanmean are the most likely choices.
+            The default is np.nanmean.
+        local_kernel : float, optional
+            Kernel size for local sky subtraction. If the
+            kernel is set to 7, then 7 fibers and 7 pixels in wavelength
+            are the kernel size.  This parameter is used for both
+            the Gaussian Kernel to fill masked values and the median filter
+            for performing the local sky.  The default is 7..
+        obj_radius : float, optional
+            Radius in arcseconds to mask the object for local sky and pca sky
+            subtraction. The default is 3..
+        obj_sky_thresh : float, optional
+            If an object is brighter than the sky * obj_sky_thresh for a given
+            wavelength than that wavelength is ignored in the pca sky 
+            subtraction. The default is 1..
+        ncomp : integer, optional
+            The number of components for pca sky subtraciton. This value
+            should be <50 as there are only 280 total fibers and usually many
+            less in the sky fiber selection.  The default is 25.
+        bins : integer, optional
+            The number of wavelength bins for continuum estimation and 
+            subtraction during the pca sky subtraction process. 
+            The default is 25.
+        peakthresh : float, optional
+            The threshold for identifying sky lines above the median sky value
+            to subtract in the pca algorithm. The default is 7.
 
         Returns
         -------
@@ -173,7 +216,8 @@ class LRS2Object:
             wave_window = self.wave_window
         for key in self.sides.keys():
             for L in self.sides[key]:
-                if (L.channel == self.blue_detect_channel) or (L.channel==self.red_detect_channel):
+                if ((L.channel == self.blue_detect_channel) or
+                    (L.channel==self.red_detect_channel)):
                     L.sky_subtraction(xc=xc, yc=yc, sky_radius=sky_radius, 
                                       detwave=detwave, wave_window=wave_window, 
                                       local=local, pca=pca, 
@@ -182,9 +226,10 @@ class LRS2Object:
                                       obj_sky_thresh=obj_sky_thresh,
                                       ncomp=ncomp, bins=bins, 
                                       peakthresh=peakthresh,
-                                      correct_ftf_from_skylines=correct_ftf_from_skylines)
+                           correct_ftf_from_skylines=correct_ftf_from_skylines)
             for i, L in enumerate(self.sides[key]):
-                if (L.channel == self.blue_other_channel) or (L.channel==self.red_other_channel):
+                if ((L.channel == self.blue_other_channel) or
+                    (L.channel==self.red_other_channel)):
                     if i == 0:
                         j = 1
                     else:
@@ -195,8 +240,10 @@ class LRS2Object:
                     L.centroid_y = self.sides[key][j].centroid_y
                     avgadrx = np.mean(L.adrx)
                     avgadry = np.mean(L.adry)
-                    L.sky_subtraction(xc=self.sides[key][j].centroid_x+(avgadrx-L.adrx0), 
-                                      yc=self.sides[key][j].centroid_y+(avgadry-L.adrx0), 
+                    L.sky_subtraction(xc=self.sides[key][j].centroid_x+
+                                         (avgadrx-L.adrx0), 
+                                      yc=self.sides[key][j].centroid_y+
+                                         (avgadry-L.adrx0), 
                                       sky_radius=sky_radius, 
                                       detwave=detwave, wave_window=wave_window, 
                                       local=local, pca=pca, 
@@ -205,23 +252,32 @@ class LRS2Object:
                                       obj_sky_thresh=obj_sky_thresh,
                                       ncomp=ncomp, bins=bins,
                                       peakthresh=peakthresh,
-                                      correct_ftf_from_skylines=correct_ftf_from_skylines)
+                          correct_ftf_from_skylines=correct_ftf_from_skylines)
     
     def set_manual_extraction(self, xc, yc, detwave=None, 
                               wave_window=None):
         '''
-        
+        Use this function prior to sky subtraction and extraction if you would
+        like to extract your source at a  specific list of locations for your
+        observations. This could be due to the faintness of a source or 
+        complexity.
 
         Parameters
         ----------
-        xc : TYPE
-            DESCRIPTION.
-        yc : TYPE
-            DESCRIPTION.
-        detwave : TYPE, optional
-            DESCRIPTION. The default is None.
-        wave_window : TYPE, optional
-            DESCRIPTION. The default is None.
+        xc : list, optional
+            The x-coordinate in IFU space for the object centroid. 
+            The default is None.
+        yc : list, optional
+            The y-coordinate in IFU space for the object centroid.  
+            The default is None.
+        detwave : float, optional
+            The central wavelength for running object detection. 
+            The default is None.  If None, then the class attribute detwave is
+            used.
+        wave_window : float, optional
+            The wavelength window for running object detection. 
+            The default is None. If None, then the class attribute wave_window
+            is used.
 
         Returns
         -------
@@ -249,24 +305,36 @@ class LRS2Object:
 
         Parameters
         ----------
-        xc : TYPE, optional
-            DESCRIPTION. The default is None.
-        yc : TYPE, optional
-            DESCRIPTION. The default is None.
-        detwave : TYPE, optional
-            DESCRIPTION. The default is None.
-        wave_window : TYPE, optional
-            DESCRIPTION. The default is None.
-        use_aperture : TYPE, optional
-            DESCRIPTION. The default is True.
-        radius : TYPE, optional
-            DESCRIPTION. The default is 2.5.
-        model : TYPE, optional
-            DESCRIPTION. The default is None.
-        func : TYPE, optional
-            DESCRIPTION. The default is np.nanmean.
-        attr : TYPE, optional
-            DESCRIPTION. The default is 'skysub'.
+        xc : float, optional
+            The x-coordinate in IFU space for the object centroid. 
+            The default is None.
+        yc : float, optional
+            The y-coordinate in IFU space for the object centroid.  
+            The default is None.
+        detwave : float, optional
+            The central wavelength for running object detection. 
+            The default is None.  If None, then the class attribute detwave is
+            used.
+        wave_window : float, optional
+            The wavelength window for running object detection. 
+            The default is None. If None, then the class attribute wave_window
+            is used.
+        use_aperture : boolean, optional
+            Use an aperture for extraction. The default is True.
+        radius : float, optional
+            Radius for aperture extraction and model fitting. 
+            The default is 2.5.
+        model : astropy 2D model, optional
+            The Gaussian2D or Moffat2D model for weighted extraction. 
+            The default is None.
+        func : numpy function, optional
+            The function used for detection.  Depending on the application,
+            np.nanmedian or np.nanmean are the most likely choices.
+            The default is np.nanmean.
+        attr : string, optional
+            The data attribute for extracting the spectrum. 
+            This can either be 'data', non-skysubtracted, or 'skysub'.
+            The default is 'skysub'.
 
         Returns
         -------
@@ -275,7 +343,8 @@ class LRS2Object:
         '''
         for key in self.sides.keys():
             for L in self.sides[key]:
-                if (L.channel == self.blue_detect_channel) or (L.channel==self.red_detect_channel):
+                if ((L.channel == self.blue_detect_channel) or 
+                    (L.channel==self.red_detect_channel)):
                     L.extract_spectrum(xc=xc, yc=yc, detwave=detwave, 
                                        wave_window=wave_window, 
                                        use_aperture=use_aperture, 
@@ -283,7 +352,8 @@ class LRS2Object:
                                        model=model,
                                        func=func, attr=attr)
             for i, L in enumerate(self.sides[key]):
-                if (L.channel == self.blue_other_channel) or (L.channel==self.red_other_channel):
+                if ((L.channel == self.blue_other_channel) or 
+                    (L.channel==self.red_other_channel)):
                     if i == 0:
                         j = 1
                     else:
@@ -296,18 +366,28 @@ class LRS2Object:
                                        radius=radius,
                                        model=model,
                                        func=func, attr=attr)
+
     def calculate_norm(self, detwave=None, wave_window=None, func=np.nansum):
         '''
-        
+        We can use the extracted spectra to normalize multiple observations
+        to the average value before combining either cubes or spectra.  The
+        normalization is applied to the 1D spectra and the sky subtracted
+        fiber spectra.
 
         Parameters
         ----------
-        detwave : TYPE, optional
-            DESCRIPTION. The default is None.
-        wave_window : TYPE, optional
-            DESCRIPTION. The default is None.
-        func : TYPE, optional
-            DESCRIPTION. The default is np.nansum.
+        detwave : float, optional
+            The central wavelength for calculating normalization. 
+            The default is None.  If None, then the class attribute detwave is
+            used.
+        wave_window : float, optional
+            The wavelength window for calculating normalization. 
+            The default is None. If None, then the class attribute wave_window
+            is used.
+        func : numpy function, optional
+            The function used for detection.  Depending on the application,
+            np.nanmedian or np.nanmean are the most likely choices.
+            The default is np.nanmean.
 
         Returns
         -------
@@ -316,7 +396,8 @@ class LRS2Object:
         '''
         for key in self.sides.keys():
             for L in self.sides[key]:
-                if (L.channel == self.blue_detect_channel) or (L.channel==self.red_detect_channel):
+                if ((L.channel == self.blue_detect_channel) or
+                    (L.channel==self.red_detect_channel)):
                     L.calculate_norm(detwave=detwave, wave_window=wave_window, 
                                      func=func)
                     self.norms[key] = L.norm
@@ -324,16 +405,25 @@ class LRS2Object:
         
     def normalize(self, detwave=None, wave_window=None, func=np.nansum):
         '''
-        
+        After funning "calculate_normalization", 
+        the normalization is applied to the 1D spectra and the sky subtracted
+        fiber spectra.
+
 
         Parameters
         ----------
-        detwave : TYPE, optional
-            DESCRIPTION. The default is None.
-        wave_window : TYPE, optional
-            DESCRIPTION. The default is None.
-        func : TYPE, optional
-            DESCRIPTION. The default is np.nansum.
+        detwave : float, optional
+            The central wavelength for calculating normalization. 
+            The default is None.  If None, then the class attribute detwave is
+            used.
+        wave_window : float, optional
+            The wavelength window for calculating normalization. 
+            The default is None. If None, then the class attribute wave_window
+            is used.
+        func : numpy function, optional
+            The function used for detection.  Depending on the application,
+            np.nanmedian or np.nanmean are the most likely choices.
+            The default is np.nanmean.
 
         Returns
         -------
@@ -344,19 +434,20 @@ class LRS2Object:
                             func=func)
         for key in self.sides.keys():
             for L in self.sides[key]:
-                if (L.channel == self.blue_detect_channel) or (L.channel==self.red_detect_channel):
+                if ((L.channel == self.blue_detect_channel) or
+                    (L.channel==self.red_detect_channel)):
                     L.log.info('%s: %0.2f' % (op.basename(L.filename), 
                                               self.norms[key] / self.avgnorm))
                 L.normalize(self.avgnorm / self.norms[key])
 
     def rectify(self, newwave):
         '''
-        
+        Rectify 1D spectra to "newwave"
 
         Parameters
         ----------
-        newwave : TYPE
-            DESCRIPTION.
+        newwave : numpy array
+            New wavelength for 1D spectra
 
         Returns
         -------
@@ -369,7 +460,7 @@ class LRS2Object:
 
     def get_astrometry(self):
         '''
-        
+        Get the astrometry for each fiber as a function of wavelength
 
         Returns
         -------
@@ -381,18 +472,28 @@ class LRS2Object:
                 L.get_astrometry()
 
     def make_cube(self, newwave, redkernel=1.8, bluekernel=0.1,
-                  scale=0.4, ran=[-7., 7., -7., 7.], radius=0.7, kernel=0.1):
+                  scale=0.4, ran=[-7., 7., -7., 7.], radius=0.7):
         '''
-        
+        Create a cube for each channel in the list of observations
 
         Parameters
         ----------
-        newwave : TYPE
-            DESCRIPTION.
-        redkernel : TYPE, optional
-            DESCRIPTION. The default is 1.8.
-        bluekernel : TYPE, optional
-            DESCRIPTION. The default is 0.1.
+        newwave : numpy array
+            New wavelength for 1D spectra
+        redkernel : float, optional
+            Wavelength kernel of LRS2R for convolution in pixel space. 
+            The default is 1.8.
+        bluekernel : float, optional
+            Wavelength kernel of LRS2B for convolution in pixel space. 
+            The default is 0.1.
+        scale : float, optional
+            Pixel scale in arcseconds of the final cube. The default is 0.4.
+        ran : list, optional
+            x, y boundary list in arcseconds for final cube.
+            The default is [-7., 7., -7., 7.].
+        radius : float, optional
+            This is a boundary condition for the radius of neighboring fibers.
+            The default is 0.7.
 
         Returns
         -------
@@ -411,12 +512,13 @@ class LRS2Object:
 
     def plot_spectrum(self, ax):
         '''
-        
+        Plot spectra from the individual channels and the combined spectrum
+        if it exists.
 
         Parameters
         ----------
-        ax : TYPE
-            DESCRIPTION.
+        ax : matplotlib.pylot axis
+            The axis to plot the science and sky spectra.
 
         Returns
         -------
@@ -430,19 +532,23 @@ class LRS2Object:
                 ax.plot(L.spec1Dsky.spectral_axis, 
                          L.spec1Dsky.flux*1e17, color='firebrick', lw=0.5)
         if hasattr(self, 'spec1D'):
-            ax.plot(self.spec1D.spectral_axis.value, self.spec1D.flux.value*1e17, 
-                     'k-', lw=0.5)
+            ax.plot(self.spec1D.spectral_axis.value,
+                    self.spec1D.flux.value*1e17, 'k-', lw=0.5)
         
     def calculate_sn(self, detwave=None, wave_window=None):
         '''
-        
+        Calculate the SN for a shot/exposure.
 
         Parameters
         ----------
-        detwave : TYPE, optional
-            DESCRIPTION. The default is None.
-        wave_window : TYPE, optional
-            DESCRIPTION. The default is None.
+        detwave : float, optional
+            The central wavelength for calculating the signal to noise. 
+            The default is None.  If None, then the class attribute detwave is
+            used.
+        wave_window : float, optional
+            The wavelength window for calculating the signal to noise. 
+            The default is None. If None, then the class attribute wave_window
+            is used.
 
         Returns
         -------
@@ -456,13 +562,24 @@ class LRS2Object:
                     self.SN[key] = L.calculate_sn(detwave, wave_window)
                     L.log.info('SN for %s: %0.2f' % (op.basename(L.filename),
                                self.SN[key]))
+
     def get_single_spectrum_for_side(self, L_dict):
         '''
-        
+        This is used in combine_spectra to combine the channels on a side 
+        first.  The overlap between the channels is handled in a weighted 
+        interpolation going from UV to Orange and Red to FarRed.
+
+        Parameters
+        ----------
+        L_dict : dictionary of LRS2Multi objects
+            DESCRIPTION.
 
         Returns
         -------
-        None.
+        sSp : numpy array
+            Combined side spectrum
+        esSp : numpy array
+            Error for combined side spectrum
 
         '''
         w, y, z = ([], [], [])
@@ -492,7 +609,7 @@ class LRS2Object:
     
     def combine_spectra(self):
         '''
-        
+        Create a SN-weighted single spectrum from multiple observations
 
         Returns
         -------
@@ -527,7 +644,8 @@ class LRS2Object:
         
     def combine_cubes(self):
         '''
-        
+        Create a SN-weighted single cube from multiple observations
+
 
         Returns
         -------
@@ -566,10 +684,12 @@ class LRS2Object:
 
         Parameters
         ----------
-        redkernel : TYPE, optional
-            DESCRIPTION. The default is 2.25.
-        bluekernel : TYPE, optional
-            DESCRIPTION. The default is 0.1.
+        redkernel : float, optional
+            Wavelength kernel of LRS2R for convolution in pixel space. 
+            The default is 1.8.
+        bluekernel : float, optional
+            Wavelength kernel of LRS2B for convolution in pixel space. 
+            The default is 0.1.
 
         Returns
         -------
@@ -586,12 +706,13 @@ class LRS2Object:
     
     def write_combined_spectrum(self, outname=None):
         '''
+        Write the single combined spectrum to a .fits and .dat file
         
-
         Parameters
         ----------
-        outname : TYPE, optional
-            DESCRIPTION. The default is None.
+        outname : string, optional
+            Filename for output fits file. Use ".fits" in the name.
+            The default is None.
 
         Returns
         -------
@@ -643,18 +764,8 @@ class LRS2Object:
         
         Parameters
         ----------
-        wave : 1d numpy array
-            Wavelength for data cube
-        xgrid : 2d numpy array
-            x-coordinates for data cube
-        ygrid : 2d numpy array
-            y-coordinates for data cube
-        Dcube : 3d numpy array
-            Data cube, corrected for ADR
         outname : str
-            Name of the outputted fits file
-        he : object
-            hdu header object to carry original header information
+            Name of the outputted fits file. Default is None.
         '''
         keys = list(self.sides.keys())
         L = self.sides[keys[-1]][0]
