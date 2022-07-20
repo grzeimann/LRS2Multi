@@ -117,6 +117,8 @@ class LRS2Multi:
             self.side = 'blue'
         else: 
             self.side = 'red'
+        lrs2_dict = {'blue':[-50.,-150.], 'red':[49.42, -150.14]}
+        self.lrs2_coords = lrs2_dict[self.side]
         self.spec_ext = f[6].data
         try:
             self.get_barycor()
@@ -590,6 +592,17 @@ class LRS2Multi:
             ADRdec = (tDec - astrometry_object.dec0) * 3600.
             return ADRra, ADRdec
     
+    def get_astrometry_external(self, R, D, rot):
+        A = Astrometry(R, D, 0., 0., 0.)
+        A.tp = A.setup_TP(R, D, rot, A.x0,  A.y0)
+        lrs2ra, lrs2dec = A.tp.wcs_pix2world(self.lrs2_coords[1] - self.y, 
+                                             self.lrs2_coords[0] + self.x, 1)
+        self.ra = lrs2ra
+        self.dec = lrs2dec
+        self.delta_ra = (np.cos(np.deg2rad(np.mean(self.dec))) *
+                         (self.ra - np.mean(self.ra)) * 3600.)
+        self.delta_dec = (self.dec - np.mean(self.dec)) * 3600.
+
     def get_astrometry(self):
         xc, yc = (0., 0.)
         s_str = self.header['QRA'] + " " + self.header['QDEC']
@@ -602,6 +615,8 @@ class LRS2Multi:
                                                      self.adry+yc-self.adry0, A)
         ra, dec = A.tp.wcs_pix2world(self.x-self.centroid_x, 
                                      self.y-self.centroid_y, 1)
+        self.ra = ra
+        self.dec = dec
         self.delta_ra = (np.cos(np.deg2rad(self.skycoord.dec.deg)) *
                          (ra - self.skycoord.ra.deg) * 3600.)
         self.delta_dec = (dec - self.skycoord.dec.deg) * 3600.
