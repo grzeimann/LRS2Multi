@@ -43,7 +43,8 @@ class LRS2Multi:
     Wrapper for reduction routines with processed data, multi*.fits 
     
     '''
-    def __init__(self, filename, ignore_mask=False):
+    def __init__(self, filename, detwave=None, wave_window=None,
+                 ignore_mask=False):
         '''
         Class initialization
 
@@ -97,10 +98,18 @@ class LRS2Multi:
         self.y = f[5].data[:, 1] * 1.
         self.wave = wave * 1.
         self.normcurve = norm * 1.
+        if detwave is None:
+            self.detwave = wave[int(len(wave)/2)]
+        else:
+            self.detwave = detwave
+        if wave_window is None:
+            self.wave_window = 5.
+        else:
+            self.wave_window = wave_window
         self.adrx = J(wave)
         self.adry = K(wave)
-        self.adrx0 = None
-        self.adry0 = None
+        self.adrx0 = self.adrx[np.argmin(np.abs(self.wave-self.detwave))]
+        self.adry0 = self.adry[np.argmin(np.abs(self.wave-self.detwave))]
         self.skysub = self.data * 1.
         self.sky = 0. * self.data
         self.ra = f[5].data[:, 4] * 1.
@@ -108,8 +117,6 @@ class LRS2Multi:
         self.setup_logging()
         self.objname = objname
         self.header = f[0].header
-        self.detwave = wave[int(len(wave)/2)]
-        self.wave_window = 5.
         self.set_big_grid()
         self.filename = filename
         self.channel = channel

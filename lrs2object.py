@@ -78,9 +78,8 @@ class LRS2Object:
             self.sides[observation] = []
 
         for filename, observation in zip(filenames, observations):
-            L = LRS2Multi(filename, ignore_mask=ignore_mask)
-            L.detwave = detwave
-            L.wave_window = wave_window
+            L = LRS2Multi(filename, detwave=detwave, wave_window=wave_window,
+                          ignore_mask=ignore_mask)
             self.sides[observation].append(L)
             try:
                 millum = L.header['MILLUM'] / 1e4
