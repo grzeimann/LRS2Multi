@@ -445,7 +445,7 @@ class LRS2Multi:
         if pca:
             # Subtract continuum for PCA fitting
             cont_sub = self.skysub * np.nan
-            self.pca_sky = self.skysub * np.nan
+            self.pca_sky = self.skysub * 0.
             for k in np.arange(2):
                 for i in np.arange(cont_sub.shape[0]):
                     if np.isfinite(self.skysub[i]).sum() > 100:
