@@ -255,7 +255,8 @@ class LRS2Object:
                           correct_ftf_from_skylines=correct_ftf_from_skylines)
     
     def set_manual_extraction(self, xc=None, yc=None, skypos=None,
-                              detwave=None, wave_window=None):
+                              xoff=None, yoff=None, detwave=None, 
+                              wave_window=None):
         '''
         Use this function prior to sky subtraction and extraction if you would
         like to extract your source at a  specific list of locations for your
@@ -294,6 +295,10 @@ class LRS2Object:
                     Y = interp2d(L.ra, L.dec, L.y)
                     XC = X(skypos.ra.deg, skypos.dec.deg)
                     YC = Y(skypos.ra.deg, skypos.dec.deg)
+                    if xoff is not None:
+                        XC -= xoff
+                    if yoff is not None:
+                        YC -= yoff
                 else:
                     XC = xc[cnt]
                     YC = yc[cnt]
