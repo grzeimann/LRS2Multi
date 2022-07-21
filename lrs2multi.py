@@ -610,7 +610,7 @@ class LRS2Multi:
         self.skycoord = SkyCoord(L, unit=(u.hourangle, u.deg))
         A = Astrometry(R, D, 0., 0., 0.)
         A.tp = A.setup_TP(R, D, rot, A.x0,  A.y0)
-        lrs2ra, lrs2dec = A.tp.wcs_pix2world(self.lrs2_coords[1] - self.y, 
+        lrs2ra, lrs2dec = A.tp.wcs_pix2world(self.lrs2_coords[1] + self.y, 
                                              self.lrs2_coords[0] + self.x, 1)
         self.ra = lrs2ra
         self.dec = lrs2dec
