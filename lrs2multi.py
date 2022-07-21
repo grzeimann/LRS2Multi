@@ -446,36 +446,38 @@ class LRS2Multi:
             # Subtract continuum for PCA fitting
             cont_sub = self.skysub * np.nan
             self.pca_sky = self.skysub * np.nan
-            for i in np.arange(cont_sub.shape[0]):
-                if np.isfinite(self.skysub[i]).sum() > 100:
-                    self.cont_model[i] = self.get_continuum(self.skysub[i], 
-                                                            ignore_waves, 
-                                                            bins=bins)
-                    cont_sub[i] = (self.skysub[i] - self.cont_model[i])
-
-                   
-            # Fit PCA Model
-            yK = cont_sub[self.skyfiber_sel] / self.normcurve
-            yK[np.isnan(yK)] = 0.0
-            pca = PCA(n_components=ncomp).fit(yK)
-            Hk = pca.components_
-            
-
-            self.pca_sky = np.zeros(self.skysub.shape)
-            # Fit residuals for PCA eigenvalues and subtract model
-            for i in np.arange(self.skysub.shape[0]):
-                if np.isfinite(self.skysub[i]).sum() > 100:
-                    yp = self.skysub[i] - self.get_continuum(self.skysub[i], 
-                                                       ignore_waves, bins=bins)
-                    yp[np.isnan(yp)] = 0.0
-                else: 
-                    continue
-                res = self.pca_fit(Hk, yp / self.normcurve, skypix)
-                ycopy = 0. * yp
-                ycopy[:] = res * self.normcurve
-                ycopy[~skypix_alone] = 0.0
-                self.pca_sky[i] = ycopy
-            self.skysub = self.skysub - self.pca_sky
+            for k in np.arange(2):
+                for i in np.arange(cont_sub.shape[0]):
+                    if np.isfinite(self.skysub[i]).sum() > 100:
+                        self.cont_model[i] = self.get_continuum(self.skysub[i], 
+                                                                ignore_waves, 
+                                                                bins=bins)
+                        cont_sub[i] = (self.skysub[i] - self.cont_model[i])
+    
+                       
+                # Fit PCA Model
+                yK = cont_sub[self.skyfiber_sel] / self.normcurve
+                yK[np.isnan(yK)] = 0.0
+                pca = PCA(n_components=ncomp).fit(yK)
+                Hk = pca.components_
+                
+    
+                self.pca_sky_temp = np.zeros(self.skysub.shape)
+                # Fit residuals for PCA eigenvalues and subtract model
+                for i in np.arange(self.skysub.shape[0]):
+                    if np.isfinite(self.skysub[i]).sum() > 100:
+                        yp = self.skysub[i] - self.get_continuum(self.skysub[i], 
+                                                           ignore_waves, bins=bins)
+                        yp[np.isnan(yp)] = 0.0
+                    else: 
+                        continue
+                    res = self.pca_fit(Hk, yp / self.normcurve, skypix)
+                    ycopy = 0. * yp
+                    ycopy[:] = res * self.normcurve
+                    ycopy[~skypix_alone] = 0.0
+                    self.pca_sky_temp[i] = ycopy
+                self.pca_sky += self.pca_sky_temp
+                self.skysub = self.skysub - self.pca_sky_temp
             
     
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
