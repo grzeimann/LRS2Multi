@@ -471,7 +471,7 @@ class LRS2Object:
             for L in self.sides[key]:
                 L.get_astrometry()
 
-    def get_astrometry_external(self, R, D, rot):
+    def get_astrometry_external(self, pos_list):
         '''
         Get the astrometry for each fiber as a function of wavelength
     
@@ -480,9 +480,9 @@ class LRS2Object:
         None.
     
         '''
-        for key in self.sides.keys():
+        for key, pos in zip(self.sides.keys(), pos_list):
             for L in self.sides[key]:
-                L.get_astrometry_external(R, D, rot)
+                L.get_astrometry_external(pos[0], pos[1], pos[2])
 
     def make_cube(self, newwave, redkernel=1.8, bluekernel=0.1,
                   scale=0.4, ran=[-7., 7., -7., 7.], radius=0.7):
