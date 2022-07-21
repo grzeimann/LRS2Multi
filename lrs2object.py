@@ -15,6 +15,7 @@ import astropy.units as u
 from astropy.nddata import NDData, StdDevUncertainty
 from specutils import Spectrum1D
 from astropy.table import Table
+from scipy.interpolate import interp2d
 
 
 class LRS2Object:
@@ -254,8 +255,8 @@ class LRS2Object:
                                       peakthresh=peakthresh,
                           correct_ftf_from_skylines=correct_ftf_from_skylines)
     
-    def set_manual_extraction(self, xc, yc, detwave=None, 
-                              wave_window=None):
+    def set_manual_extraction(self, xc=None, yc=None, skypos=None,
+                              detwave=None, wave_window=None):
         '''
         Use this function prior to sky subtraction and extraction if you would
         like to extract your source at a  specific list of locations for your
@@ -270,6 +271,8 @@ class LRS2Object:
         yc : list, optional
             The y-coordinate in IFU space for the object centroid.  
             The default is None.
+        skypos : astropy.coordinates.Skycoord, optional
+            Sky coordinates if the astrometry is already set
         detwave : float, optional
             The central wavelength for running object detection. 
             The default is None.  If None, then the class attribute detwave is
@@ -284,10 +287,18 @@ class LRS2Object:
         None.
 
         '''
-        cnt = 0
+        cnt = 0            
         for key in self.sides.keys():
             for L in self.sides[key]:
-                L.manual_extraction(xc=xc[cnt], yc=yc[cnt], detwave=detwave,
+                if skypos is not None:
+                    X = interp2d(L.ra, L.dec, L.x)
+                    Y = interp2d(L.ra, L.dec, L.y)
+                    XC = X(skypos.ra.deg, skypos.dec.deg)
+                    YC = Y(skypos.ra.deg, skypos.dec.deg)
+                else:
+                    XC = xc[cnt]
+                    YC = yc[cnt]
+                L.manual_extraction(xc=XC, yc=YC, detwave=detwave,
                                     wave_window=wave_window)
             cnt += 1
     
