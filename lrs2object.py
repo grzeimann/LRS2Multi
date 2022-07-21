@@ -636,6 +636,50 @@ class LRS2Object:
         esSp[wsel] = z[0][wsel] * (w[0][wsel]) + z[1][wsel] * (w[1][wsel])
         return sSp, esSp
     
+    def get_single_cube_for_side(self, L_dict):
+        '''
+        This is used in combine_spectra to combine the channels on a side 
+        first.  The overlap between the channels is handled in a weighted 
+        interpolation going from UV to Orange and Red to FarRed.
+
+        Parameters
+        ----------
+        L_dict : dictionary of LRS2Multi objects
+            DESCRIPTION.
+
+        Returns
+        -------
+        sSp : numpy array
+            Combined side spectrum
+        esSp : numpy array
+            Error for combined side spectrum
+
+        '''
+        w, y, z = ([], [], [])
+        for L in L_dict:
+            wave = L.spec3D.spectral_axis.value
+            y.append(L.spec3D.flux.value)
+            z.append(1./L.spec3D.uncertainty.array)
+            if L.side == 'blue':
+                l1 = 4635.
+                l2 = 4645.
+                wsel = (wave >= l1) * (wave <= l2)
+            else:
+                l1 = 8275.
+                l2 = 8400.
+                wsel = (wave >= l1) * (wave <= l2)
+            if (L.channel == 'farred') or (L.channel == 'orange'):
+                _w = (wave - l1) / (l2 - l1)
+                w.append(_w)
+            else:
+                _w = (l2 - wave) / (l2 - l1)
+                w.append(_w)
+        sSp = np.nanmean(y, axis=0)
+        sSp[wsel] = y[0][wsel] * w[0][wsel] + y[1][wsel] * w[1][wsel]
+        esSp = np.nanmean(z, axis=0)
+        esSp[wsel] = z[0][wsel] * (w[0][wsel]) + z[1][wsel] * (w[1][wsel])
+        return sSp, esSp
+    
     def combine_spectra(self):
         '''
         Create a SN-weighted single spectrum from multiple observations
@@ -687,9 +731,10 @@ class LRS2Object:
         for key in self.sides.keys():
             for L in self.sides[key]:
                 wave = L.spec3D.spectral_axis.value
-                specs.append(L.spec3D.flux.value)
-                weights.append(self.SN[key] * np.isfinite(specs[-1]))
-                variances.append(1./L.spec3D.uncertainty.array)
+            sSp, esSp = self.get_single_cube_for_side(self.sides[key])
+            specs.append(sSp)
+            weights.append(self.SN[key] * np.isfinite(specs[-1]))
+            variances.append(esSp)
         L.log.info('Making combined cube')
         specs, weights, variances = [np.array(x) for x in 
                                      [specs, weights, variances]]
