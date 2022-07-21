@@ -593,15 +593,21 @@ class LRS2Multi:
             return ADRra, ADRdec
     
     def get_astrometry_external(self, R, D, rot):
+        xc, yc = (0., 0.)
+        s_str = self.header['QRA'] + " " + self.header['QDEC']
+        L = s_str
+        self.skycoord = SkyCoord(L, unit=(u.hourangle, u.deg))
         A = Astrometry(R, D, 0., 0., 0.)
         A.tp = A.setup_TP(R, D, rot, A.x0,  A.y0)
         lrs2ra, lrs2dec = A.tp.wcs_pix2world(self.lrs2_coords[1] - self.y, 
                                              self.lrs2_coords[0] + self.x, 1)
         self.ra = lrs2ra
         self.dec = lrs2dec
-        self.delta_ra = (np.cos(np.deg2rad(np.mean(self.dec))) *
-                         (self.ra - np.mean(self.ra)) * 3600.)
-        self.delta_dec = (self.dec - np.mean(self.dec)) * 3600.
+        self.delta_ra = (np.cos(np.deg2rad(self.skycoord.dec.deg)) *
+                         (self.ra - self.skycoord.ra.deg) * 3600.)
+        self.delta_dec = (self.dec - self.skycoord.dec.deg) * 3600.
+        self.raoff, self.decoff = self.get_ADR_RAdec(self.adrx+xc-self.adrx0, 
+                                                     self.adry+yc-self.adry0, A)
 
     def get_astrometry(self):
         xc, yc = (0., 0.)
