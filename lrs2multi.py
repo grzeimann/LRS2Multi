@@ -386,7 +386,7 @@ class LRS2Multi:
                         correct_ftf_from_skylines=False,
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
                         obj_sky_thresh=1., ncomp=25, bins=25,
-                        peakthresh=7.):
+                        peakthresh=7., pca_iter=1):
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
@@ -446,7 +446,7 @@ class LRS2Multi:
             # Subtract continuum for PCA fitting
             cont_sub = self.skysub * np.nan
             self.pca_sky = self.skysub * 0.
-            for k in np.arange(2):
+            for k in np.arange(pca_iter):
                 for i in np.arange(cont_sub.shape[0]):
                     if np.isfinite(self.skysub[i]).sum() > 100:
                         self.cont_model[i] = self.get_continuum(self.skysub[i], 

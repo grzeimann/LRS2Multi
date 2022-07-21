@@ -134,7 +134,8 @@ class LRS2Object:
                         wave_window=None, local=False, pca=False, 
                         correct_ftf_from_skylines=False,
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
-                        obj_sky_thresh=1., ncomp=25, bins=25, peakthresh=7.):
+                        obj_sky_thresh=1., ncomp=25, bins=25, peakthresh=7.,
+                        pca_iter=1):
         '''
         
 
@@ -225,7 +226,7 @@ class LRS2Object:
                                       obj_radius=obj_radius,
                                       obj_sky_thresh=obj_sky_thresh,
                                       ncomp=ncomp, bins=bins, 
-                                      peakthresh=peakthresh,
+                                      peakthresh=peakthresh, pca_iter=pca_iter,
                            correct_ftf_from_skylines=correct_ftf_from_skylines)
             for i, L in enumerate(self.sides[key]):
                 if ((L.channel == self.blue_other_channel) or
@@ -251,7 +252,7 @@ class LRS2Object:
                                       obj_radius=obj_radius,
                                       obj_sky_thresh=obj_sky_thresh,
                                       ncomp=ncomp, bins=bins,
-                                      peakthresh=peakthresh,
+                                      peakthresh=peakthresh, pca_iter=pca_iter,
                           correct_ftf_from_skylines=correct_ftf_from_skylines)
     
     def set_manual_extraction(self, xc=None, yc=None, skypos=None,
