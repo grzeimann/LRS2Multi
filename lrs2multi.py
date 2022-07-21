@@ -408,6 +408,7 @@ class LRS2Multi:
         self.skysub = self.data - self.sky
         self.pca_sky = self.skysub * np.nan
         self.local_sky = self.skysub * np.nan
+        self.cont_model = self.skysub * np.nan
         obj_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) < obj_radius
         self.fiber_obj = np.nanmean(self.skysub[obj_sel], axis=0)
         ratio = self.fiber_obj / self.fiber_sky 
@@ -447,9 +448,10 @@ class LRS2Multi:
             self.pca_sky = self.skysub * np.nan
             for i in np.arange(cont_sub.shape[0]):
                 if np.isfinite(self.skysub[i]).sum() > 100:
-                    cont_sub[i] = (self.skysub[i] - 
-                                   self.get_continuum(self.skysub[i], 
-                                                      ignore_waves, bins=bins))
+                    self.cont_model[i] = self.get_continuum(self.skysub[i], 
+                                                            ignore_waves, 
+                                                            bins=bins)
+                    cont_sub[i] = (self.skysub[i] - self.cont_model[i])
 
                    
             # Fit PCA Model
