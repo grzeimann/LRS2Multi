@@ -296,9 +296,9 @@ class LRS2Object:
                     XC = X(skypos.ra.deg, skypos.dec.deg)
                     YC = Y(skypos.ra.deg, skypos.dec.deg)
                     if xoff is not None:
-                        XC -= xoff
+                        XC += xoff
                     if yoff is not None:
-                        YC -= yoff
+                        YC += yoff
                 else:
                     XC = xc[cnt]
                     YC = yc[cnt]
