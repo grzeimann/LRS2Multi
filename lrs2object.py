@@ -351,7 +351,7 @@ class LRS2Object:
         cnt = 0
         for key in self.sides.keys():
             for L in self.sides[key]:
-                L.set_sky_mask(lines=xc[cnt], redshift=yc[cnt],
+                L.set_sky_mask(xc=xc[cnt], yc=yc[cnt],
                                     radius=radius)
             cnt += 1
 
