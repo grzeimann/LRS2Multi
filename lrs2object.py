@@ -308,10 +308,52 @@ class LRS2Object:
             cnt += 1
     
     def set_pca_wave_mask(self, lines, redshift, window=5.):
+        '''
+        
+
+        Parameters
+        ----------
+        lines : TYPE
+            DESCRIPTION.
+        redshift : TYPE
+            DESCRIPTION.
+        window : TYPE, optional
+            DESCRIPTION. The default is 5..
+
+        Returns
+        -------
+        None.
+
+        '''
         for key in self.sides.keys():
             for L in self.sides[key]:
                 L.set_pca_wave_mask(lines=lines, redshift=redshift,
                                     window=window)
+
+    def set_sky_mask(self, xc, yc, radius=2.):
+        '''
+        
+
+        Parameters
+        ----------
+        xc : TYPE
+            DESCRIPTION.
+        yc : TYPE
+            DESCRIPTION.
+        window : TYPE, optional
+            DESCRIPTION. The default is 5..
+
+        Returns
+        -------
+        None.
+
+        '''
+        cnt = 0
+        for key in self.sides.keys():
+            for L in self.sides[key]:
+                L.set_sky_mask(lines=xc[cnt], redshift=yc[cnt],
+                                    radius=radius)
+            cnt += 1
 
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
                          wave_window=None, use_aperture=True, radius=2.5,

@@ -375,6 +375,9 @@ class LRS2Multi:
         self.adry0 = self.adry[np.argmin(np.abs(self.wave-detwave))]
         self.manual = True
         
+    def set_sky_mask(self, xc, yc, radius=2.):
+        D = np.sqrt((self.x - xc)**2 + (self.y - yc)**2)
+        self.skymask = D > radius
     
     def set_pca_wave_mask(self, lines, redshift, window=5.):
         self.pca_wave_mask = np.zeros(self.wave.shape, dtype=bool)
@@ -400,7 +403,8 @@ class LRS2Multi:
                                         func=func)
            
         sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
-
+        if hasattr(self, 'skymask'):
+            sky_sel = sky_sel * self.skymask
         self.skyfiber_sel = sky_sel
         self.fiber_sky = np.nanmedian(self.data[sky_sel], axis=0)
         sky = self.fiber_sky[np.newaxis, :] * np.ones((280,))[:, np.newaxis]
