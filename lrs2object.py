@@ -822,7 +822,7 @@ class LRS2Object:
                     kernel = bluekernel
                 L.smooth_resolution(kernel)
     
-    def write_combined_spectrum(self, outname=None):
+    def write_combined_spectrum(self, outname=None, telcor=None):
         '''
         Write the single combined spectrum to a .fits and .dat file
         
@@ -841,14 +841,26 @@ class LRS2Object:
         L = self.sides[keys[0]][0]
         if outname is None:
             outname = L.header['QOBJECT'] + '_combined_spectrum.fits'
-        names = ['wavelength', 'f_lam', 'e_lam']
-        A = np.array([self.spec1D.spectral_axis.value, 
-                      self.spec1D.flux.value,
-                      self.spec1D.uncertainty.array])
-        T = Table([self.spec1D.spectral_axis.value, 
-                   self.spec1D.flux.value,
-                   self.spec1D.uncertainty.array], 
-                   names=names)
+        if telcor is None:
+            names = ['wavelength', 'f_lam', 'e_lam']
+            A = np.array([self.spec1D.spectral_axis.value, 
+                          self.spec1D.flux.value,
+                          self.spec1D.uncertainty.array])
+            T = Table([self.spec1D.spectral_axis.value, 
+                       self.spec1D.flux.value,
+                       self.spec1D.uncertainty.array], 
+                       names=names)
+        else:
+            names = ['wavelength', 'f_lam', 'e_lam', 'telcor']
+            A = np.array([self.spec1D.spectral_axis.value, 
+                          self.spec1D.flux.value,
+                          self.spec1D.uncertainty.array,
+                          telcor])
+            T = Table([self.spec1D.spectral_axis.value, 
+                       self.spec1D.flux.value,
+                       self.spec1D.uncertainty.array,
+                       telcor], 
+                       names=names)
         T.write(outname.replace('fits', 'dat'), format='ascii.fixed_width_two_line')
         f1 = fits.PrimaryHDU(A)
         he = L.header
