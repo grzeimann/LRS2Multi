@@ -475,7 +475,8 @@ class LRS2Object:
                     cnt += 1
         self.avgnorm = 1.
         
-    def normalize(self, detwave=None, wave_window=None, func=np.nansum):
+    def normalize(self, detwave=None, wave_window=None, func=np.nansum,
+                  norm_list=None):
         '''
         After funning "calculate_normalization", 
         the normalization is applied to the 1D spectra and the sky subtracted
@@ -502,8 +503,11 @@ class LRS2Object:
         None.
 
         '''
-        self.calculate_norm(detwave=detwave, wave_window=wave_window, 
-                            func=func)
+        if norm_list is None:
+            self.calculate_norm(detwave=detwave, wave_window=wave_window, 
+                                func=func)
+        else:
+            self.set_norm(norm_list)
         for key in self.sides.keys():
             for L in self.sides[key]:
                 if ((L.channel == self.blue_detect_channel) or
