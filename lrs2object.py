@@ -48,6 +48,8 @@ class LRS2Object:
             Should be 'red' or 'farred'
         blue_detect_channel : string
             Should be 'uv' or 'orange'
+        ignore_mask: boolean
+            If true, this will ignore the initial masks from the multi* files
         
         Returns
         -------
@@ -461,6 +463,18 @@ class LRS2Object:
                     self.norms[key] = L.norm
         self.avgnorm = np.nanmean(list(self.norms.values()))
         
+    def set_norm(self, norms):
+        cnt = 0
+        for key in self.sides.keys():
+            for L in self.sides[key]:
+                L.normalize(L.header['MILLUM'] / 51e4)
+                L.normalize(L.header['THROUGHP'])
+                if ((L.channel == self.blue_detect_channel) or
+                    (L.channel==self.red_detect_channel)):
+                    self.norms[key] = norms[cnt]
+                    cnt += 1
+        self.avgnorm = 1.
+        
     def normalize(self, detwave=None, wave_window=None, func=np.nansum):
         '''
         After funning "calculate_normalization", 
@@ -831,6 +845,10 @@ class LRS2Object:
         outname : string, optional
             Filename for output fits file. Use ".fits" in the name.
             The default is None.
+        
+        telcor : numpy array, optional
+            If the variable is provided then the telluric correction of
+            the same wavelength length is included in the spectrum output
 
         Returns
         -------
