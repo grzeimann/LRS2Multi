@@ -51,10 +51,10 @@ for channel in channels:
                    bounds_error=False)
     adrx = J(def_wave)
     adry = K(def_wave)
-    hdulist = fits.HDUList([fits.PrimaryHDU(np.median(wavelength)),
-                            fits.ImageHDU(np.median(trace)),
-                            fits.ImageHDU(np.median(masterbias)),
-                            fits.ImageHDU(np.median(masterflt)),
+    hdulist = fits.HDUList([fits.PrimaryHDU(np.median(wavelength, axis=0)),
+                            fits.ImageHDU(np.median(trace, axis=0)),
+                            fits.ImageHDU(np.median(masterbias, axis=0)),
+                            fits.ImageHDU(np.median(masterflt, axis=0)),
                             fits.ImageHDU(x),
                             fits.ImageHDU(y),
                             fits.ImageHDU(norm),
