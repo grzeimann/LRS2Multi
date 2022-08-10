@@ -59,8 +59,7 @@ class LRS2Raw:
         path = op.join(basepath, date, 'lrs2', 'lrs2%07d' % observation_number,
                        'exp%02d' % exposure_number)
         expstr = 'exp%02d' % exposure_number
-        ampcase = '056LL.fits'
-        self.log.info('Looking for %s and %s' % (expstr, ampcase))
+        ampcase = '056LL'
         if op.exists(tarfolder):
             self.log.info('Found tarfile %s' % tarfolder)
             T = tarfile.open(tarfolder, 'r')
@@ -70,7 +69,6 @@ class LRS2Raw:
                 try:
                     a = T.next()
                     name = a.name
-                    print(name)
                 except:
                     flag = False
                     continue  
@@ -85,7 +83,7 @@ class LRS2Raw:
             filename = name
         else:
             tarfolder = None
-            filenames = glob.glob(op.join(path, '*056LL.fits'))
+            filenames = glob.glob(op.join(path, '*056LL*.fits'))
             if len(filename) < 1:
                 self.log.error('No files found here %s' % path)
                 sys.exit('Cowardly exiting; please check input')
