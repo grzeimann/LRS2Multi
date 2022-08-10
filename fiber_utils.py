@@ -13,7 +13,7 @@ import tarfile
 import warnings
 
 from astropy.io import fits
-from math_utils import biweight
+from astropy.stats import biweight_location as biweight
 from datetime import datetime
 from scipy.interpolate import interp2d, interp1d, LinearNDInterpolator, griddata
 
