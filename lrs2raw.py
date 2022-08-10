@@ -176,6 +176,7 @@ class LRS2Raw:
         plaw = get_powerlaw(image, self.info[channel].trace)
         self.info[channel].image = image
         self.info[channel].plaw = plaw
+        image[:] -= self.info[channel].plaw
         spec = get_spectra(image, self.info[channel].trace)
         specerr = get_spectra_error(E, self.info[channel].trace)
         chi2 = get_spectra_chi2(self.info[channel].masterflt, image, E, 
