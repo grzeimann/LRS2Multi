@@ -9,20 +9,113 @@ import logging
 import numpy as np
 import os.path as op
 import warnings
+import glob
 from astropy.io import fits
-from astropy.stats import biweight_location
+from fiber_utils import base_reduction, rectify
+from fiber_utils import get_spectra_error, get_spectra, get_spectra_chi2
+
 import tarfile
+import sys
 
 warnings.filterwarnings("ignore")
+
+def get_script_path():
+    ''' Get LRS2Multi absolute path name '''
+    return op.dirname(op.realpath(sys.argv[0]))
 
 class LRS2Raw:
     ''' 
     Wrapper for reduction routines for raw data 
     
     '''
-    def __init__(self, date=None, observation_number=None):
-        pass
+    def __init__(self, basepath, date, observation_number, exposure_number=1):
+        '''
+        
+
+        Parameters
+        ----------
+        basepath : TYPE
+            DESCRIPTION.
+        date : TYPE
+            DESCRIPTION.
+        observation_number : TYPE
+            DESCRIPTION.
+        exposure_number : TYPE, optional
+            DESCRIPTION. The default is 1.
+
+        Returns
+        -------
+        None.
+
+        '''
+        self.setup_logging()
+        side_dict = {'blue': ['uv', 'orange'], 'red': ['red', 'farred']}
+        channel_dict = {'uv': ['056LL', '056LU'], 
+                        'orange': ['056RU', '056RL'],
+                        'red': ['066LL', '066LU'],
+                        'farred': ['066RU', '066RL']}
+        tarfolder = op.join(basepath, date, 'lrs2', 
+                                 'lrs2%07d.tar' % observation_number)
+        path = op.join(basepath, date, 'lrs2', 'lrs2%07d' % observation_number,
+                       'exp%02d' % exposure_number)
+        expstr = 'exp%02d' % exposure_number
+        ampcase = '056LL.fits'
+        if op.exists(tarfolder):
+            self.log.info('Found tarfile %s' % tarfolder)
+            T = tarfile.open(tarfolder, 'r')
+            flag = True
+            gotfile = False
+            while flag:
+                try:
+                    a = T.next()
+                    name = a.name
+                except:
+                    flag = False
+                    continue  
+                if (expstr in name) and (ampcase in name):
+                    b = fits.open(T.extractfile(a))
+                    flag = False
+                    gotfile = True
+                    T.close()
+            if not gotfile:
+                self.log.error('No files found for %s' % path)
+                sys.exit('Cowardly exiting; please check input')
+            filename = name
+        else:
+            tarfolder = None
+            filenames = glob.glob(op.join(path, '*056LL.fits'))
+            if len(filename) < 1:
+                self.log.error('No files found here %s' % path)
+                sys.exit('Cowardly exiting; please check input')
+            filename = filenames[0]
+            b = fits.open(filename)
+        Target = b[0].header['OBJECT']
+        if '_056' in Target:
+            side = 'blue'
+        if '_066' in Target:
+            side = 'red'
+        self.side = side
+        self.info = {}
+        for channel in side_dict[self.side]:
+            self.info[channel] = self.ChannelInfo(channel)
+            self.reduce_channel(filename, channel_dict[channel], channel)
     
+    class ChannelInfo:
+        
+        # Create channel info
+        def __init__(self, channel):
+            f = fits.open(op.join(get_script_path(), 'calibrations',
+                                  'cal_%s.fits' % channel))
+            self.wavelength = f['wavelength'].data
+            self.masterbias = f['masterbias'].data
+            self.trace = f['trace'].data
+            self.masterflt = f['masterflt'].data
+            self.def_wave = f['def_wave'].data
+            self.x = f['x'].data
+            self.y = f['y'].data
+            self.adrx = f['adrx'].data
+            self.adry = f['adry'].data
+            self.norm = f['norm'].data
     
     def setup_logging(self, logname='lrs2raw'):
         '''Set up a logger for shuffle with a name ``lrs2 advanced``.
@@ -46,54 +139,47 @@ class LRS2Raw:
             log.addHandler(handler)
         self.log = log
         self.log.propagate = False
+
+    
+    def reduce_channel(self, filename, amp, channel, tarname=None):
+        '''
         
-    def orient_image(self, image, amp, ampname):
+
+        Parameters
+        ----------
+        filename : TYPE
+            DESCRIPTION.
+        amp : TYPE
+            DESCRIPTION.
+        masterbias : TYPE
+            DESCRIPTION.
+        tarname : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
         '''
-        Orient the images from blue to red (left to right)
-        Fibers are oriented to match configuration files
-        '''
-        if amp == "LU":
-            image[:] = image[::-1, ::-1]
-        if amp == "RL":
-            image[:] = image[::-1, ::-1]
-        if ampname is not None:
-            if ampname == 'LR' or ampname == 'UL':
-                image[:] = image[:, ::-1]
-        return image
-    
-    
-    def base_reduction(self, filename, tarname=None, get_header=False):
-        if tarname is None:
-            a = fits.open(filename)
-        else:
-            try:
-                t = tarfile.open(tarname, 'r')
-                a = fits.open(t.extractfile('/'.join(filename.split('/')[-4:])))
-            except:
-                self.log.warning('Could not open %s' % filename)
-                return np.zeros((1032, 2064)), np.zeros((1032, 2064))
-        image = np.array(a[0].data, dtype=float)
-        # overscan sub
-        overscan_length = 32 * (image.shape[1] / 1064)
-        O = biweight_location(image[:, -(overscan_length-2):])
-        image[:] = image - O
-        # trim image
-        image = image[:, :-overscan_length]
-        gain = a[0].header['GAIN']
-        gain = np.where(gain > 0., gain, 0.85)
-        rdnoise = a[0].header['RDNOISE']
-        rdnoise = np.where(rdnoise > 0., rdnoise, 3.)
-        amp = (a[0].header['CCDPOS'].replace(' ', '') +
-               a[0].header['CCDHALF'].replace(' ', ''))
-        try:
-            ampname = a[0].header['AMPNAME']
-        except:
-            ampname = None
-        header = a[0].header
-        a = self.orient_image(image, amp, ampname) * gain
-        E = np.sqrt(rdnoise**2 + np.where(a > 0., a, 0.))
-        if tarname is not None:
-            t.close()
-        if get_header:
-            return a, E, header
-        return a, E
+        
+        filename1 = filename.replace('056LL', amp[0])
+        filename2 = filename.replace('056LL', amp[1])
+        array_flt1, e1, header = base_reduction(filename1, get_header=True)
+        array_flt2, e2 = base_reduction(filename2)
+        image = np.vstack([array_flt1, array_flt2])
+        E = np.vstack([e1, e2])
+        image[:] -= self.info[channel].masterbias
+        spec = get_spectra(image, self.info[channel].trace)
+        specerr = get_spectra_error(E, self.info[channel].trace)
+        chi2 = get_spectra_chi2(self.info[channel].masterflt, image, E, 
+                                self.info[channel].trace)
+        badpix = chi2 > 10.
+        specerr[badpix] = np.nan
+        spec[badpix] = np.nan
+        specrect, errrect = rectify(spec, specerr, 
+                                    self.info[channel].wavelength,
+                                    self.info[channel].def_wave)
+        specrect[:] /= header['EXPTIME']
+        errrect[:] /= header['EXPTIME']
+        self.info[channel].data = specrect
+        self.info[channel].datae = errrect
