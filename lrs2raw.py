@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore")
 
 def get_script_path():
     ''' Get LRS2Multi absolute path name '''
-    return op.dirname(op.realpath(sys.argv[0]))
+    return op.dirname(op.abspath(__file__))
 
 class LRS2Raw:
     ''' 
