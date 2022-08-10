@@ -11,7 +11,7 @@ import os.path as op
 import warnings
 import glob
 from astropy.io import fits
-from fiber_utils import base_reduction, rectify
+from fiber_utils import base_reduction, rectify, get_powerlaw
 from fiber_utils import get_spectra_error, get_spectra, get_spectra_chi2
 
 import tarfile
@@ -173,6 +173,9 @@ class LRS2Raw:
         image = np.vstack([array_flt1, array_flt2])
         E = np.vstack([e1, e2])
         image[:] -= self.info[channel].masterbias
+        plaw = get_powerlaw(image, self.info[channel].trace)
+        self.info[channel].image = image
+        self.info[channel].plaw = plaw
         spec = get_spectra(image, self.info[channel].trace)
         specerr = get_spectra_error(E, self.info[channel].trace)
         chi2 = get_spectra_chi2(self.info[channel].masterflt, image, E, 
