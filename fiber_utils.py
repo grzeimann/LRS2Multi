@@ -236,7 +236,7 @@ def get_powerlaw(image, trace, order=3):
     XV = np.array_split(X, 25)
     T = np.array_split(trace, 25, axis=1)
     XM, YM, ZM = ([], [], [])
-    xg, yg = np.meshgrid(np.linspace(0, 1031, 25), np.linspace(0, 1031, 25))
+    xg, yg = np.meshgrid(np.linspace(0, image.shape[1], 25), np.linspace(0, image.shape[0], 25))
     xg, yg = (xg.ravel(), yg.ravel())
     cnts = np.arange(25)
     if np.all(trace == 0.):
@@ -971,23 +971,23 @@ def rectify(scispectra, errspectra, wave_all, def_wave):
                                left=np.nan, right=np.nan)
         indices1[i] = np.searchsorted(wave_all[i], def_wave) + i * 1032
     
-    x_var = (def_wave[np.newaxis, :] * np.ones((scirect.shape[0],1))).ravel()
-    x_fix = wave_all.ravel()
-    indices1 = indices1.ravel()
-    indices2 = indices1 - 1
-    indices2[indices2 < 0] = 0
-    indices1[indices1 >= len(x_fix)] = len(x_fix) - 1
+    # x_var = (def_wave[np.newaxis, :] * np.ones((scirect.shape[0],1))).ravel()
+    # x_fix = wave_all.ravel()
+    # indices1 = indices1.ravel()
+    # indices2 = indices1 - 1
+    # indices2[indices2 < 0] = 0
+    # indices1[indices1 >= len(x_fix)] = len(x_fix) - 1
     
-    distances1 = np.abs(x_fix[indices1] - x_var)
-    distances2 = np.abs(x_fix[indices2] - x_var)
-    total_distance = distances1 + distances2
-    weight1 = distances1 / total_distance
-    weight2 = distances2 / total_distance
-    errorrect = (weight2**2 * errspectra.ravel()[indices1]**2 +
-                weight1**2 * errspectra.ravel()[indices2]**2)
-    errorrect = np.sqrt(errorrect)
-    errorrect = np.reshape(errorrect, scirect.shape)
-    errorrect[np.isnan(scirect)] = np.nan
+    # distances1 = np.abs(x_fix[indices1] - x_var)
+    # distances2 = np.abs(x_fix[indices2] - x_var)
+    # total_distance = distances1 + distances2
+    # weight1 = distances1 / total_distance
+    # weight2 = distances2 / total_distance
+    # errorrect = (weight2**2 * errspectra.ravel()[indices1]**2 +
+    #             weight1**2 * errspectra.ravel()[indices2]**2)
+    # errorrect = np.sqrt(errorrect)
+    # errorrect = np.reshape(errorrect, scirect.shape)
+    # errorrect[np.isnan(scirect)] = np.nan
     return scirect, errorrect
 
 def measure_contrast(image, spec, trace, xmin=0,
