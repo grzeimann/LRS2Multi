@@ -28,7 +28,8 @@ class LRS2Raw:
     Wrapper for reduction routines for raw data 
     
     '''
-    def __init__(self, basepath, date, observation_number, exposure_number=1):
+    def __init__(self, basepath, date, observation_number, exposure_number=1,
+                 side=None):
         '''
         
 
@@ -89,11 +90,12 @@ class LRS2Raw:
                 sys.exit('Cowardly exiting; please check input')
             filename = filenames[0]
             b = fits.open(filename)
-        Target = b[0].header['OBJECT']
-        if '_056' in Target:
-            side = 'blue'
-        if '_066' in Target:
-            side = 'red'
+        if side is None:
+            Target = b[0].header['OBJECT']
+            if '_056' in Target:
+                side = 'blue'
+            if '_066' in Target:
+                side = 'red'
         self.side = side
         self.info = {}
         for channel in side_dict[self.side]:
