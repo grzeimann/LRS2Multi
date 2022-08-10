@@ -60,6 +60,7 @@ class LRS2Raw:
                        'exp%02d' % exposure_number)
         expstr = 'exp%02d' % exposure_number
         ampcase = '056LL.fits'
+        self.log.info('Looking for %s and %s' % (expstr, ampcase))
         if op.exists(tarfolder):
             self.log.info('Found tarfile %s' % tarfolder)
             T = tarfile.open(tarfolder, 'r')
