@@ -167,27 +167,40 @@ class LRS2Raw:
         
         filename1 = filename.replace('056LL', amp[0])
         filename2 = filename.replace('056LL', amp[1])
+        
+        # Basic reduction
         array_flt1, e1, header = base_reduction(filename1, tarfolder=tarfolder,
                                                 get_header=True)
         array_flt2, e2 = base_reduction(filename2, tarfolder=tarfolder)
         image = np.vstack([array_flt1, array_flt2])
         E = np.vstack([e1, e2])
         image[:] -= self.info[channel].masterbias
+        
+        # Get powerlaw
         plaw = get_powerlaw(image, self.info[channel].trace)
         self.info[channel].image = image
         self.info[channel].plaw = plaw
         image[:] -= self.info[channel].plaw
+        
+        # Get spectra and error
         spec = get_spectra(image, self.info[channel].trace)
         specerr = get_spectra_error(E, self.info[channel].trace)
         chi2 = get_spectra_chi2(self.info[channel].masterflt, image, E, 
                                 self.info[channel].trace)
+        
+        # Mark pixels effected by cosmics
         badpix = chi2 > 10.
         specerr[badpix] = np.nan
         spec[badpix] = np.nan
+        
+        # Rectify spectra
         specrect, errrect = rectify(spec, specerr, 
                                     self.info[channel].wavelength,
                                     self.info[channel].def_wave)
-        specrect[:] /= header['EXPTIME']
-        errrect[:] /= header['EXPTIME']
-        self.info[channel].data = spec
-        self.info[channel].datae = specerr
+        factor = (6.626e-27 * (3e18 / self.info[channel].def_wave) /
+                  header['EXPTIME'] / 51.4e4)
+        specrect[:] *= factor
+        errrect[:] *= factor
+        self.info[channel].data = specrect
+        self.info[channel].datae = errrect
+        self.info[channel].header = header

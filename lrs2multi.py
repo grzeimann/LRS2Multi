@@ -52,7 +52,8 @@ class LRS2Multi:
         ----------
         filename : str
             multi*.fits filename for reduction
-        '''   
+        '''
+        self.setup_logging()
         f = fits.open(filename)
         channel = op.basename(filename).split('_')[-1][:-5]
         objname = f[0].header['OBJECT']
@@ -84,7 +85,6 @@ class LRS2Multi:
             datae[i, sel] = np.nan
         badfibers = np.isnan(data).sum(axis=1) > 150.
         data[badfibers] = np.nan
-        self.setup_logging()
         if channel == 'orange':
               data[:140] = data[:140] / 1.025
               data[140:] = data[140:] / 0.975
@@ -111,10 +111,9 @@ class LRS2Multi:
         self.adrx0 = self.adrx[np.argmin(np.abs(self.wave-self.detwave))]
         self.adry0 = self.adry[np.argmin(np.abs(self.wave-self.detwave))]
         self.skysub = self.data * 1.
-        self.sky = 0. * self.data
+        self.sky =  self.data * 0.
         self.ra = f[5].data[:, 4] * 1.
         self.dec = f[5].data[:, 5] * 1.
-        self.setup_logging()
         self.objname = objname
         self.header = f[0].header
         self.set_big_grid()
