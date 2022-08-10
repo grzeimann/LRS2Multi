@@ -257,8 +257,8 @@ def get_powerlaw(image, trace, order=3):
             avgz.append(np.nanmedian(image[y, x]))
         for fib in fibgap:
             x, y = ([], [])
-            dy = np.array(np.ceil(trace[fib, xchunk])+7, dtype=int)
-            dy2 = np.array(np.ceil(trace[fib+1, xchunk])-7, dtype=int)
+            dy = np.array(np.ceil(trace[fib, xchunk])+5, dtype=int)
+            dy2 = np.array(np.ceil(trace[fib+1, xchunk])-5, dtype=int)
             for j, xc in enumerate(xchunk):
                 d = np.arange(dy[j], dy2[j])
                 if len(d):
@@ -269,7 +269,7 @@ def get_powerlaw(image, trace, order=3):
                 avgy.append(np.mean(y))
                 avgz.append(np.nanmedian(image[y, x]))
         x, y = ([], [])
-        dy = np.array(np.ceil(trace[-1, xchunk])+7, dtype=int)
+        dy = np.array(np.ceil(trace[-1, xchunk])+5, dtype=int)
         for j, xc in enumerate(xchunk):
             d = np.arange(dy[j], image.shape[1]-4)
             if len(d):
