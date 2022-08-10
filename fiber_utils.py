@@ -87,7 +87,6 @@ def base_reduction(filename, tarfolder=None, get_header=False):
     if tarfolder is not None:
         T = tarfile.open(tarfolder, 'r')
         a = fits.open(T.extractfile('/'.join(filename.split('/')[-4:])))
-        T.close()
     else:
         a = fits.open(filename)
 
@@ -121,6 +120,8 @@ def base_reduction(filename, tarfolder=None, get_header=False):
     E = np.sqrt(rdnoise**2 + np.where(a > 0., a, 0.))
     if get_header:
         return a, E, header
+    if tarfolder is not None:
+        T.close()
     return a, E
 
 def get_bigW(array_wave, array_trace, image):
