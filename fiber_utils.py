@@ -56,7 +56,7 @@ def orient_image(image, amp, ampname):
     return image
 
 
-def base_reduction(filename, get_header=False):
+def base_reduction(filename, tarfolder=None, get_header=False):
     '''
     Reduce filename from tarfile or fits file.
     
@@ -84,9 +84,8 @@ def base_reduction(filename, get_header=False):
         Associated error frame
     '''
     # Load fits file
-    tarbase = op.dirname(op.dirname(op.dirname(filename))) + '.tar'
-    if op.exists(tarbase):
-        T = tarfile.open(tarbase, 'r')
+    if tarfolder is not None:
+        T = tarfile.open(tarfolder, 'r')
         a = fits.open(T.extractfile('/'.join(filename.split('/')[-4:])))
         T.close()
     else:

@@ -98,7 +98,8 @@ class LRS2Raw:
         self.info = {}
         for channel in side_dict[self.side]:
             self.info[channel] = self.ChannelInfo(channel)
-            self.reduce_channel(filename, channel_dict[channel], channel)
+            self.reduce_channel(filename, channel_dict[channel], channel, 
+                                tarfolder=tarfolder)
     
     class ChannelInfo:
         
@@ -141,7 +142,7 @@ class LRS2Raw:
         self.log.propagate = False
 
     
-    def reduce_channel(self, filename, amp, channel, tarname=None):
+    def reduce_channel(self, filename, amp, channel, tarfolder=None):
         '''
         
 
@@ -164,8 +165,9 @@ class LRS2Raw:
         
         filename1 = filename.replace('056LL', amp[0])
         filename2 = filename.replace('056LL', amp[1])
-        array_flt1, e1, header = base_reduction(filename1, get_header=True)
-        array_flt2, e2 = base_reduction(filename2)
+        array_flt1, e1, header = base_reduction(filename1, tarfolder=tarfolder,
+                                                get_header=True)
+        array_flt2, e2 = base_reduction(filename2, tarfolder=tarfolder)
         image = np.vstack([array_flt1, array_flt2])
         E = np.vstack([e1, e2])
         image[:] -= self.info[channel].masterbias
