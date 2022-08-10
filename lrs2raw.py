@@ -70,6 +70,7 @@ class LRS2Raw:
                 try:
                     a = T.next()
                     name = a.name
+                    print(name)
                 except:
                     flag = False
                     continue  
