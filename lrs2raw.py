@@ -183,5 +183,5 @@ class LRS2Raw:
                                     self.info[channel].def_wave)
         specrect[:] /= header['EXPTIME']
         errrect[:] /= header['EXPTIME']
-        self.info[channel].data = specrect
-        self.info[channel].datae = errrect
+        self.info[channel].data = spec
+        self.info[channel].datae = specerr
