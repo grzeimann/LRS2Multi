@@ -213,6 +213,7 @@ class LRS2Raw:
                   header['EXPTIME'] / 51.4e4)
         specrect[:] *= factor
         errrect[:] *= factor
+        self.info[channel].orig = spec
         self.info[channel].data = specrect
         self.info[channel].datae = errrect
         self.info[channel].header = header
