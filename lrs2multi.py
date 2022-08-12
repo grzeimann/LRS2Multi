@@ -56,6 +56,8 @@ class LRS2Multi:
         self.setup_logging()
         if lrs2raw_object is None:
             self.read_file(filename, ignore_mask=ignore_mask)
+        else:
+            self.get_info_from_lrs2raw_object(lrs2raw_object)
         if detwave is None:
             self.detwave = self.wave[int(len(self.wave)/2)]
         else:
