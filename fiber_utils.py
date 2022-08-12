@@ -16,6 +16,7 @@ from astropy.io import fits
 from astropy.stats import biweight_location as biweight
 from datetime import datetime
 from scipy.interpolate import interp2d, interp1d, LinearNDInterpolator, griddata
+from scipy.signal import medfilt
 
 from astropy.modeling.models import Gaussian1D, Polynomial2D
 from astropy.modeling.fitting import LevMarLSQFitter
@@ -977,6 +978,23 @@ def rectify(scispectra, errspectra, wave_all, def_wave):
     # errorrect = np.reshape(errorrect, scirect.shape)
     # errorrect[np.isnan(scirect)] = np.nan
     return scirect, errorrect
+
+def get_fiber_to_fiber(data, error, wave, sigma=5.):
+    avg = np.nanmedian(data, axis=0)
+    norm = np.nanmedian(data / avg[np.newaxis, :], axis=1)
+    avg = np.nanmedian(data / norm[:, np.newaxis], axis=0)
+    ftf = data * 0.
+    mask = np.zeros(data.shape, dtype=bool)
+    for i in np.arange(data.shape[0]):
+        y = data[i] / avg
+        sel = np.isfinite(y)
+        y = np.interp(wave, wave[sel], y[sel])
+        smooth = medfilt(y, 41)
+        ftf[i] = smooth
+        ftf[i, :20] = y[:20]
+        ftf[i, -20:] = y[-20:]
+        mask[i] = np.abs(data[i] - avg * ftf[i]) > (sigma * error[i])
+    return ftf, mask
 
 def measure_contrast(image, spec, trace, xmin=0,
                           xmax=1032, low_per=5, high_per=95):
