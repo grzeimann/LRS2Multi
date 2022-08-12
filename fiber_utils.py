@@ -979,7 +979,7 @@ def rectify(scispectra, errspectra, wave_all, def_wave):
     # errorrect[np.isnan(scirect)] = np.nan
     return scirect, errorrect
 
-def get_fiber_to_fiber(data, error, wave, sigma=5.):
+def get_fiber_to_fiber(data, error, wave, sigma=5., width=2):
     avg = np.nanmedian(data, axis=0)
     norm = np.nanmedian(data / avg[np.newaxis, :], axis=1)
     avg = np.nanmedian(data / norm[:, np.newaxis], axis=0)
@@ -994,6 +994,9 @@ def get_fiber_to_fiber(data, error, wave, sigma=5.):
         ftf[i, :20] = y[:20]
         ftf[i, -20:] = y[-20:]
         mask[i] = np.abs(data[i] - avg * ftf[i]) > (sigma * error[i])
+        for j in np.arange(1, int(width)):
+            mask[i:] += mask[:-i]
+            mask[:-i] += mask[i:]
     return ftf, mask
 
 def measure_contrast(image, spec, trace, xmin=0,
