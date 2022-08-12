@@ -55,7 +55,6 @@ def orient_image(image, amp, ampname):
             image[:] = image[:, ::-1]
     return image
 
-
 def base_reduction(filename, tarfolder=None, get_header=False):
     '''
     Reduce filename from tarfile or fits file.
@@ -140,7 +139,6 @@ def get_bigW(array_wave, array_trace, image):
             bigW[yy[:, j], j] = np.polyval(p0, yy[:, j])
     return bigW
 
-
 def get_bigF(array_trace, image):
     bigF = np.zeros(image.shape)
     Y, X = np.indices(array_trace.shape)
@@ -172,7 +170,6 @@ def power_law(x, c1, c2=.5, c3=.15, c4=1., sig=2.5):
     '''
     return c1 / (c2 + c3 * np.power(abs(x / sig), c4))
 
-
 def get_powerlaw_ydir(trace, spec, amp, col):
     '''
     Get powerlaw in ydir for a given column
@@ -201,7 +198,6 @@ def get_powerlaw_ydir(trace, spec, amp, col):
         plaw.append(np.nansum(nspec[:, ::43] *
                               power_law(d, 1.4e-5, c3=2., c4=1.0,  sig=1.5)))
     return yz, np.array(plaw)   
-
 
 def get_powerlaw(image, trace, order=3):
     '''
@@ -297,7 +293,6 @@ def get_powerlaw(image, trace, order=3):
         plaw = 0. * image
     return plaw
 
-
 def get_trace_reference(specid, ifuslot, ifuid, amp, obsdate,
                        virusconfig='/work/03946/hetdex/maverick/virus_config'):
     files = glob.glob(op.join(virusconfig, 'Fiber_Locations', '*',
@@ -313,7 +308,6 @@ def get_trace_reference(specid, ifuslot, ifuid, amp, obsdate,
         timediff[i] = np.abs((obsdate - d).days)
     ref_file = np.loadtxt(files[np.argmin(timediff)])
     return ref_file
-
 
 def get_trace(twilight, specid, ifuslot, ifuid, amp, obsdate, tr_folder):
     ref = get_trace_reference(specid, ifuslot, ifuid, amp, obsdate,
@@ -363,7 +357,6 @@ def get_trace(twilight, specid, ifuslot, ifuid, amp, obsdate, tr_folder):
         sel = Trace[i, :] > 0.
         trace[i] = np.polyval(np.polyfit(xchunks[sel], Trace[i, sel], 7), x)
     return trace, ref
-
 
 def get_spectra(array_flt, array_trace, npix=5):
     '''
@@ -449,7 +442,6 @@ def get_spectra_error(array_flt, array_trace, npix=5):
             spec[fiber] += array_flt[indv+j, x]**2 * w
     return np.sqrt(spec) 
 
-
 def get_spectra_chi2(array_flt, array_sci, array_err,
                      array_trace, npix=5):
     '''
@@ -499,7 +491,6 @@ def get_spectra_chi2(array_flt, array_sci, array_err,
         denom = (chi2[:, 2] + 0.01*chi2[:, 0].sum(axis=0)[np.newaxis, :])**2
         spec[fiber] = 1. / (1. + npix) * np.sum(num / denom, axis=0)
     return spec
-
 
 def get_ifucenfile(folder, ifuid, amp):
     if ifuid == '004':
@@ -734,7 +725,6 @@ def measure_fiber_profile(image, spec, trace, wave, xmin=400,
 
     return init, smodel
 
-
 def build_model_image(init, image, trace, wave, spec):
     yind, xind = np.indices(image.shape)
     model_image = image * 0.
@@ -749,7 +739,6 @@ def build_model_image(init, image, trace, wave, spec):
         model_image[yi, xi] += (init(foff[sel]) *
                                 (np.ones((indh-indl, 1)) * ospec[np.newaxis, :])[sel]) 
     return model_image
-
 
 def get_continuum(spectra, nbins=25):
     '''
@@ -793,7 +782,6 @@ def manual_convolution(a, G, error=False):
     if error:
         return np.sqrt(np.nansum(b**2 * G.array**2, axis=1))
     return np.nansum(b * G.array, axis=1)
-
 
 def detect_sources(dx, dy, spec, err, mask, def_wave, psf, ran, scale, log,
                    spec_res=5.6, thresh=5.):

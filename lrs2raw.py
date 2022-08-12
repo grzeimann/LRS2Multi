@@ -28,21 +28,26 @@ class LRS2Raw:
     Wrapper for reduction routines for raw data 
     
     '''
-    def __init__(self, basepath, date, observation_number, exposure_number=1,
-                 side=None):
+    def __init__(self, date, observation_number, exposure_number=1,
+                 side=None, from_raw=False,
+                 basepath='/work/03946/hetdex/maverick'):
         '''
         
 
         Parameters
         ----------
-        basepath : TYPE
-            DESCRIPTION.
         date : TYPE
             DESCRIPTION.
         observation_number : TYPE
             DESCRIPTION.
         exposure_number : TYPE, optional
             DESCRIPTION. The default is 1.
+        side : TYPE, optional
+            DESCRIPTION. The default is None.
+        from_raw : TYPE, optional
+            DESCRIPTION. The default is False.
+        basepath : TYPE, optional
+            DESCRIPTION. The default is '/work/03946/hetdex/maverick'.
 
         Returns
         -------
@@ -57,6 +62,11 @@ class LRS2Raw:
                         'farred': ['066RU', '066RL']}
         tarfolder = op.join(basepath, date, 'lrs2', 
                                  'lrs2%07d.tar' % observation_number)
+        if from_raw:
+            tarfolder = op.join(basepath, '%s.tar')
+        else:
+            tarfolder = op.join(basepath, date, 'lrs2', 
+                                     'lrs2%07d.tar' % observation_number)
         path = op.join(basepath, date, 'lrs2', 'lrs2%07d' % observation_number,
                        'exp%02d' % exposure_number)
         expstr = 'exp%02d' % exposure_number
@@ -98,10 +108,13 @@ class LRS2Raw:
                 side = 'red'
         self.side = side
         self.info = {}
+        name = 'multi_%s_%07d_%s_%s.fits'
         for channel in side_dict[self.side]:
             self.info[channel] = self.ChannelInfo(channel)
             self.reduce_channel(filename, channel_dict[channel], channel, 
                                 tarfolder=tarfolder)
+            self.info[channel].filename = name % (date, observation_number,
+                                                  expstr, channel)
     
     class ChannelInfo:
         
@@ -143,7 +156,6 @@ class LRS2Raw:
         self.log = log
         self.log.propagate = False
 
-    
     def reduce_channel(self, filename, amp, channel, tarfolder=None):
         '''
         
@@ -204,3 +216,11 @@ class LRS2Raw:
         self.info[channel].data = specrect
         self.info[channel].datae = errrect
         self.info[channel].header = header
+        self.info[channel].channel = channel
+        self.info[channel].objname = header['OBJECT']
+        self.info[channel].spec_ext = np.array([self.info[channel].def_wave, 
+                                                self.info[channel].def_wave*0.,
+                                                self.info[channel].def_wave*0.,
+                                                self.info[channel].def_wave*0.,
+                                                self.info[channel].def_wave*0.,
+                                                self.info[channel].norm])

@@ -43,8 +43,8 @@ class LRS2Multi:
     Wrapper for reduction routines with processed data, multi*.fits 
     
     '''
-    def __init__(self, filename, detwave=None, wave_window=None,
-                 ignore_mask=False):
+    def __init__(self, filename, lrs2raw_object=None, detwave=None, 
+                 wave_window=None, ignore_mask=False):
         '''
         Class initialization
 
@@ -54,6 +54,48 @@ class LRS2Multi:
             multi*.fits filename for reduction
         '''
         self.setup_logging()
+        if lrs2raw_object is None:
+            self.read_file(filename, ignore_mask=ignore_mask)
+        if detwave is None:
+            self.detwave = self.wave[int(len(self.wave)/2)]
+        else:
+            self.detwave = detwave
+        if wave_window is None:
+            self.wave_window = 5.
+        else:
+            self.wave_window = wave_window
+
+        if ((self.channel == 'orange') or (self.channel == 'uv')):
+            self.side = 'blue'
+        else: 
+            self.side = 'red'
+        lrs2_dict = {'blue':[-50.,-150.], 'red':[49.42, -150.14]}
+        self.lrs2_coords = lrs2_dict[self.side]
+        try:
+            self.get_barycor()
+        except:
+            self.barycor = 0.0
+        self.set_big_grid()
+        self.wave = self.wave * (1. + self.barycor / 2.99892e8)
+        self.fill_bad_fibers()
+        self.manual = False
+        
+    def read_file(self, filename, ignore_mask=False):
+        '''
+        
+
+        Parameters
+        ----------
+        filename : TYPE
+            DESCRIPTION.
+        ignore_mask : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        None.
+
+        '''
         f = fits.open(filename)
         channel = op.basename(filename).split('_')[-1][:-5]
         objname = f[0].header['OBJECT']
@@ -78,10 +120,6 @@ class LRS2Multi:
                 sel[i:] += sel[:-i]
                 sel[:-i] += sel[i:]
             data[i][sel] = np.nan
-            #data[i][sel] = np.interp(wave, wave[~sel], medfilt(data[i, ~sel], 25), left=np.nan, 
-            #                 right=np.nan)[sel]
-            #datae[i][sel] = np.interp(wave, wave[~sel], medfilt(datae[i, ~sel], 25), left=np.nan, 
-            #                 right=np.nan)[sel]
             datae[i, sel] = np.nan
         badfibers = np.isnan(data).sum(axis=1) > 150.
         data[badfibers] = np.nan
@@ -98,14 +136,6 @@ class LRS2Multi:
         self.y = f[5].data[:, 1] * 1.
         self.wave = wave * 1.
         self.normcurve = norm * 1.
-        if detwave is None:
-            self.detwave = wave[int(len(wave)/2)]
-        else:
-            self.detwave = detwave
-        if wave_window is None:
-            self.wave_window = 5.
-        else:
-            self.wave_window = wave_window
         self.adrx = J(wave)
         self.adry = K(wave)
         self.adrx0 = self.adrx[np.argmin(np.abs(self.wave-self.detwave))]
@@ -116,24 +146,45 @@ class LRS2Multi:
         self.dec = f[5].data[:, 5] * 1.
         self.objname = objname
         self.header = f[0].header
-        self.set_big_grid()
         self.filename = filename
         self.channel = channel
-        if ((self.channel == 'orange') or (self.channel == 'uv')):
-            self.side = 'blue'
-        else: 
-            self.side = 'red'
-        lrs2_dict = {'blue':[-50.,-150.], 'red':[49.42, -150.14]}
-        self.lrs2_coords = lrs2_dict[self.side]
         self.spec_ext = f[6].data
-        try:
-            self.get_barycor()
-        except:
-            self.barycor = 0.0
-        self.wave = self.wave * (1. + self.barycor / 2.99892e8)
-        self.fill_bad_fibers()
-        self.manual = False
         
+    def get_info_from_lrs2raw_object(self, lrs2raw_object):
+        '''
+        
+
+        Parameters
+        ----------
+        lrs2raw_object : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+        
+        self.data = lrs2raw_object.data
+        self.error = lrs2raw_object.datae
+        self.x = lrs2raw_object.x
+        self.y = lrs2raw_object.y
+        self.wave = lrs2raw_object.def_wave
+        self.normcurve = lrs2raw_object.norm
+        self.adrx = lrs2raw_object.adrx
+        self.adry = lrs2raw_object.adry
+        self.adrx0 = self.adrx[np.argmin(np.abs(self.wave-self.detwave))]
+        self.adry0 = self.adry[np.argmin(np.abs(self.wave-self.detwave))]
+        self.skysub = self.data * 1.
+        self.sky =  self.data * 0.
+        self.ra = lrs2raw_object.x
+        self.dec = lrs2raw_object.y
+        self.objname = lrs2raw_object.objname
+        self.header = lrs2raw_object.header
+        self.filename = lrs2raw_object.filename
+        self.channel = lrs2raw_object.channel
+        self.spec_ext = lrs2raw_object.spec_ext
+
     def setup_logging(self, logname='lrs2multi'):
         '''Set up a logger for shuffle with a name ``lrs2 advanced``.
 
