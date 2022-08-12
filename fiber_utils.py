@@ -994,7 +994,7 @@ def get_fiber_to_fiber(data, error, wave, sigma=5., width=2):
         ftf[i, :20] = y[:20]
         ftf[i, -20:] = y[-20:]
         mask[i] = np.abs(data[i] - avg * ftf[i]) > (sigma * error[i])
-        for j in np.arange(1, int(width)):
+        for j in np.arange(1, int(width+1)):
             mask[i, j:] += mask[i, :-j]
             mask[i, :-j] += mask[i, j:]
     return ftf, mask
