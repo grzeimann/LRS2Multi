@@ -62,6 +62,8 @@ class LRS2Multi:
             self.detwave = self.wave[int(len(self.wave)/2)]
         else:
             self.detwave = detwave
+        self.adrx0 = self.adrx[np.argmin(np.abs(self.wave-self.detwave))]
+        self.adry0 = self.adry[np.argmin(np.abs(self.wave-self.detwave))]
         if wave_window is None:
             self.wave_window = 5.
         else:
@@ -140,8 +142,6 @@ class LRS2Multi:
         self.normcurve = norm * 1.
         self.adrx = J(wave)
         self.adry = K(wave)
-        self.adrx0 = self.adrx[np.argmin(np.abs(self.wave-self.detwave))]
-        self.adry0 = self.adry[np.argmin(np.abs(self.wave-self.detwave))]
         self.skysub = self.data * 1.
         self.sky =  self.data * 0.
         self.ra = f[5].data[:, 4] * 1.
@@ -175,8 +175,7 @@ class LRS2Multi:
         self.normcurve = lrs2raw_object.norm
         self.adrx = lrs2raw_object.adrx
         self.adry = lrs2raw_object.adry
-        self.adrx0 = self.adrx[np.argmin(np.abs(self.wave-self.detwave))]
-        self.adry0 = self.adry[np.argmin(np.abs(self.wave-self.detwave))]
+        
         self.skysub = self.data * 1.
         self.sky =  self.data * 0.
         self.ra = lrs2raw_object.x
