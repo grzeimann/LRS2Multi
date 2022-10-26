@@ -28,7 +28,7 @@ class LRS2Object:
     
         
     '''
-    def __init__(self, filenames, detwave=6563., wave_window=10.,
+    def __init__(self, filenames, lrs2raw_objects=None, detwave=6563., wave_window=10.,
                  red_detect_channel='red', blue_detect_channel='orange',
                  ignore_mask=False):
         '''
@@ -72,16 +72,34 @@ class LRS2Object:
         red_dict = {'red': 'farred', 'farred': 'red'}
         self.red_other_channel = red_dict[red_detect_channel]
         self.blue_other_channel = blue_dict[blue_detect_channel]
-
-        observations = [('_').join(op.basename(filename).split('_')[:4]) 
-                        for filename in filenames]
-        unique_observations = np.unique(observations)
-        for observation in unique_observations:
-            self.sides[observation] = []
+        
+        if lrs2raw_objects is None:
+            observations = [('_').join(op.basename(filename).split('_')[:4]) 
+                            for filename in filenames]
+            unique_observations = np.unique(observations)
+            for observation in unique_observations:
+                self.sides[observation] = []
+        else:
+            observations, filenames = ([], [])
+            for lrs2raw_object in lrs2raw_objects:
+                for channel in lrs2raw_object.info.keys():
+                    name = 'multi_%s_%07d_exp%02d' % (
+                            lrs2raw_object.info[channel].date,
+                            lrs2raw_object.info[channel].observation_number,
+                            lrs2raw_object.info[channel].exposure_number)
+                    observations.append(name)
+                    filenames.append(lrs2raw_object.info[channel])
+                self.sides[name] = []
+        
 
         for filename, observation in zip(filenames, observations):
-            L = LRS2Multi(filename, detwave=detwave, wave_window=wave_window,
-                          ignore_mask=ignore_mask)
+            if lrs2raw_objects is None:
+                L = LRS2Multi(filename, detwave=detwave, wave_window=wave_window,
+                              ignore_mask=ignore_mask)
+            else:
+                L = LRS2Multi('', lrs2raw_object=filename,
+                              detwave=detwave, wave_window=wave_window,
+                              ignore_mask=ignore_mask)
             self.sides[observation].append(L)
             try:
                 millum = L.header['MILLUM'] / 1e4

@@ -115,6 +115,9 @@ class LRS2Raw:
                                 tarfolder=tarfolder)
             self.info[channel].filename = name % (date, observation_number,
                                                   expstr, channel)
+            self.info[channel].date = date
+            self.info[channel].observation_number = observation_number
+            self.info[channel].exposure_number = exposure_number
     
     class ChannelInfo:
         
