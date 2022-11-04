@@ -261,7 +261,8 @@ class LRS2Object:
                     L.adry0 = self.sides[key][j].adry0
                     L.centroid_x = self.sides[key][j].centroid_x
                     L.centroid_y = self.sides[key][j].centroid_y
-                    L.sky_sel = self.sides[key][j].sky_sel
+                    if hasattr(L, 'sky_sel'):
+                        L.sky_sel = self.sides[key][j].sky_sel
                     avgadrx = np.mean(L.adrx)
                     avgadry = np.mean(L.adry)
                     L.sky_subtraction(xc=self.sides[key][j].centroid_x+
