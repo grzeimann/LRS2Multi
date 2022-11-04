@@ -328,8 +328,8 @@ class LRS2Multi:
                                func=func, attr=attr)
         if use_percentile_sky:
             sel = Y < np.nanpercentile(Y, percentile)
-            xc = np.nanmean(self.x[sel])
-            yc = np.nanmean(self.y[sel])
+            xc = np.nanmedian(self.x[sel])
+            yc = np.nanmedian(self.y[sel])
             self.sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) < sky_radius 
         D = np.sqrt((self.x[np.newaxis,:] - self.x[:, np.newaxis])**2 + 
                     (self.y[np.newaxis,:] - self.y[:, np.newaxis])**2)
