@@ -317,7 +317,8 @@ class LRS2Multi:
 
     def find_centroid(self, detwave=None, wave_window=None, quick_skysub=True,
                       radius=4, func=np.nanmean, attr='data',
-                      use_percentile_sky=False, percentile=25):
+                      use_percentile_sky=False, percentile=25, 
+                      sky_radius=2.5):
         # Collapse spectrum 
         if detwave is None:
             detwave = self.detwave
@@ -326,8 +327,10 @@ class LRS2Multi:
         Y = self.collapse_wave(detwave, wave_window, quick_skysub=quick_skysub,
                                func=func, attr=attr)
         if use_percentile_sky:
-            self.sky_sel = Y < np.nanpercentile(Y, percentile)
-            
+            sel = Y < np.nanpercentile(Y, percentile)
+            xc = np.nanmean(self.x[sel])
+            yc = np.nanmean(self.y[sel])
+            self.sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) < sky_radius 
         D = np.sqrt((self.x[np.newaxis,:] - self.x[:, np.newaxis])**2 + 
                     (self.y[np.newaxis,:] - self.y[:, np.newaxis])**2)
         G = np.exp(-0.5 * D**2 / 0.8**2)
@@ -457,7 +460,8 @@ class LRS2Multi:
             xc, yc = self.find_centroid(detwave=detwave, wave_window=wave_window, 
                                         quick_skysub=True, radius=obj_radius,
                                         func=func, percentile=percentile,
-                                        use_percentile_sky=use_percentile_sky)
+                                        use_percentile_sky=use_percentile_sky,
+                                        sky_radius=sky_radius)
         if use_percentile_sky:
             sky_sel = self.sky_sel
         else:
