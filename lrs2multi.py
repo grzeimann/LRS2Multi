@@ -440,7 +440,8 @@ class LRS2Multi:
                         correct_ftf_from_skylines=False,
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
                         obj_sky_thresh=1., ncomp=25, bins=25,
-                        peakthresh=7., pca_iter=1):
+                        peakthresh=7., pca_iter=1, percentile=25,
+                        use_percentile_sky=False):
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
