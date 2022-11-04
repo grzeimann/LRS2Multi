@@ -453,8 +453,12 @@ class LRS2Multi:
             xc, yc = self.find_centroid(detwave=detwave, wave_window=wave_window, 
                                         quick_skysub=True, radius=obj_radius,
                                         func=func)
-           
-        sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
+        if use_percentile_sky:
+            Y = self.collapse_wave(detwave, wave_window, quick_skysub=False,
+                                   func=func, attr='data')
+            sky_sel = Y < np.nanpercentile(Y, percentile)
+        else:
+            sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
         if hasattr(self, 'skymask'):
             sky_sel = sky_sel * self.skymask
         self.skyfiber_sel = sky_sel
