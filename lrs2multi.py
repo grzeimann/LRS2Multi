@@ -292,6 +292,9 @@ class LRS2Multi:
         cax = self.ax.scatter(self.x, self.y, c=y, cmap=plt.get_cmap('coolwarm'),
                           vmin=vmin, vmax=vmax, marker='h', s=250)
         self.ax.scatter(xc, yc, marker='x', color='k', s=100)
+        if hasattr(self, 'sky_sel'):
+            self.ax.scatter(self.x[self.sky_sel], self.y[self.sky_sel], 
+                            marker='.', color='red')
         name = ' '.join(op.basename(self.filename)[:-5].split('_')[1:])
         self.ax.text(0, 4, '%s' % name, fontsize=16, ha='center',
                      va='bottom')
