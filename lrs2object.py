@@ -873,7 +873,8 @@ class LRS2Object:
                     kernel = bluekernel
                 L.smooth_resolution(kernel)
     
-    def write_combined_spectrum(self, outname=None, telcor=None):
+    def write_combined_spectrum(self, outname=None, telcor=None,
+                                obj_to_write=None):
         '''
         Write the single combined spectrum to a .fits and .dat file
         
@@ -896,24 +897,26 @@ class LRS2Object:
         L = self.sides[keys[0]][0]
         if outname is None:
             outname = L.header['QOBJECT'] + '_combined_spectrum.fits'
+        if obj_to_write is None:
+            obj_to_write = self.spec1D
         if telcor is None:
             names = ['wavelength', 'f_lam', 'e_lam']
-            A = np.array([self.spec1D.spectral_axis.value, 
-                          self.spec1D.flux.value,
-                          self.spec1D.uncertainty.array])
-            T = Table([self.spec1D.spectral_axis.value, 
-                       self.spec1D.flux.value,
-                       self.spec1D.uncertainty.array], 
+            A = np.array([obj_to_write.spectral_axis.value, 
+                          obj_to_write.flux.value,
+                          obj_to_write.uncertainty.array])
+            T = Table([obj_to_write.spectral_axis.value, 
+                       obj_to_write.flux.value,
+                       obj_to_write.uncertainty.array], 
                        names=names)
         else:
             names = ['wavelength', 'f_lam', 'e_lam', 'telcor']
-            A = np.array([self.spec1D.spectral_axis.value, 
-                          self.spec1D.flux.value,
-                          self.spec1D.uncertainty.array,
+            A = np.array([obj_to_write.spectral_axis.value, 
+                          obj_to_write.flux.value,
+                          obj_to_write.uncertainty.array,
                           telcor])
-            T = Table([self.spec1D.spectral_axis.value, 
-                       self.spec1D.flux.value,
-                       self.spec1D.uncertainty.array,
+            T = Table([obj_to_write.spectral_axis.value, 
+                       obj_to_write.flux.value,
+                       obj_to_write.uncertainty.array,
                        telcor], 
                        names=names)
         T.write(outname.replace('fits', 'dat'), format='ascii.fixed_width_two_line')
@@ -931,14 +934,14 @@ class LRS2Object:
             except:
                 continue
         
-        f1.header['DWAVE'] = self.spec1D.spectral_axis.value[1] - self.spec1D.spectral_axis.value[0]
-        f1.header['WAVE0'] = self.spec1D.spectral_axis.value[0]
+        f1.header['DWAVE'] = obj_to_write.spectral_axis.value[1] - obj_to_write.spectral_axis.value[0]
+        f1.header['WAVE0'] = obj_to_write.spectral_axis.value[0]
         f1.header['WAVESOL'] = 'WAVE0 + DWAVE * linspace(0, NAXIS1)'
         f1.header['WAVEUNIT'] = 'A'
         f1.header['FLUXUNIT'] = 'ergs/s/cm2/A'
-        f1.header['CRVAL1'] = self.spec1D.spectral_axis.value[0]
+        f1.header['CRVAL1'] = obj_to_write.spectral_axis.value[0]
         f1.header['CRPIX1'] = 1
-        f1.header['CDELT1'] = self.spec1D.spectral_axis.value[1] - self.spec1D.spectral_axis.value[0]
+        f1.header['CDELT1'] = obj_to_write.spectral_axis.value[1] - obj_to_write.spectral_axis.value[0]
         for i, name in enumerate(names):
             f1.header['ROW%i' % (i+1)] = name
         f1.writeto(outname, overwrite=True)
