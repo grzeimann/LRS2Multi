@@ -778,6 +778,8 @@ class LRS2Object:
         specs = []
         variances = []
         weights = []
+        flam_unit = (u.erg / u.cm**2 / u.s / u.AA)
+        self.spec_dict = {}
         for key in self.sides.keys():
             for L in self.sides[key]:
                 wave = L.spec1D.spectral_axis.value
@@ -785,6 +787,11 @@ class LRS2Object:
             specs.append(sSp)
             weights.append(self.SN[key] * np.isfinite(specs[-1]))
             variances.append(esSp)
+            nd = NDData(sSp, unit=flam_unit, mask=np.isnan(sSp),
+                        uncertainty=StdDevUncertainty(esSp))
+            self.spec_dict[key] = Spectrum1D(spectral_axis=wave*u.AA, 
+                                     flux=nd.data*nd.unit, uncertainty=nd.uncertainty,
+                                     mask=nd.mask)
         specs, weights, variances = [np.array(x) for x in 
                                      [specs, weights, variances]]
         weights[weights < np.nanmax(weights, axis=0) * 0.2] = np.nan
@@ -794,12 +801,14 @@ class LRS2Object:
         spec[spec == 0.] = np.nan
         nansel = np.isnan(spec)
         error[nansel] = np.nan
-        flam_unit = (u.erg / u.cm**2 / u.s / u.AA)
+        
         nd = NDData(spec, unit=flam_unit, mask=np.isnan(spec),
                     uncertainty=StdDevUncertainty(error))
         self.spec1D = Spectrum1D(spectral_axis=wave*u.AA, 
                                  flux=nd.data*nd.unit, uncertainty=nd.uncertainty,
                                  mask=nd.mask)
+        
+
         
     def combine_cubes(self):
         '''
