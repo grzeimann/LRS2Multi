@@ -874,7 +874,7 @@ class LRS2Object:
                 L.smooth_resolution(kernel)
     
     def write_combined_spectrum(self, outname=None, telcor=None,
-                                obj_to_write=None):
+                                obj_to_write=None, L=None):
         '''
         Write the single combined spectrum to a .fits and .dat file
         
@@ -894,7 +894,8 @@ class LRS2Object:
 
         '''
         keys = list(self.sides.keys())
-        L = self.sides[keys[0]][0]
+        if L is None:
+            L = self.sides[keys[0]][0]
         if outname is None:
             outname = L.header['QOBJECT'] + '_combined_spectrum.fits'
         if obj_to_write is None:
