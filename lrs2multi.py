@@ -718,7 +718,7 @@ class LRS2Multi:
         H.writeto(outname, overwrite=True)
     
     def write_spectrum(self):
-        outname = self.filename.replace('multi', 'spectrum')
+        outname = op.basename(self.filename.replace('multi', 'spectrum'))
         self.spec_ext[1] = self.spectrum
         self.spec_ext[2] = self.spectrum_error
         f1 = fits.PrimaryHDU(self.spec_ext)
