@@ -647,6 +647,8 @@ class LRS2Multi:
         self.spec1Dsky *= norm
         self.skysub *= norm
         self.error *= norm
+        self.spectrum *= norm
+        self.spectrum_error *= norm
 
     def smooth_resolution(self, kernel):
         G = Gaussian1DKernel(kernel)
@@ -718,6 +720,7 @@ class LRS2Multi:
     def write_spectrum(self):
         outname = self.filename.replace('multi', 'spectrum')
         self.spec_ext[1] = self.spectrum
+        self.spec_ext[2] = self.spectrum_error
         f1 = fits.PrimaryHDU(self.spec_ext)
         he = self.header
         for key in he.keys():
