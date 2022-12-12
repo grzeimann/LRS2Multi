@@ -95,7 +95,7 @@ class LRS2Raw:
         else:
             tarfolder = None
             filenames = glob.glob(op.join(path, '*056LL*.fits'))
-            if len(filename) < 1:
+            if len(filenames) < 1:
                 self.log.error('No files found here %s' % path)
                 sys.exit('Cowardly exiting; please check input')
             filename = filenames[0]
