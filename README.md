@@ -4,6 +4,9 @@
 To set up LRS2Multi on TACC you need the following four commands to run "successfully."
 ```
 ssh username@stampede2.tacc.utexas.edu
+cd $HOME
+ln -s $WORK work-stampede2
+module load python3
 pip3 install astropy --user
 pip3 install seaborn --user
 pip3 install specutils --user
