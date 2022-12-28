@@ -549,7 +549,6 @@ class LRS2Multi:
                 self.pca_sky += self.pca_sky_temp
                 self.skysub = self.skysub - self.pca_sky_temp
             
-    
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
                          wave_window=None, use_aperture=True, radius=2.5,
                          model=None, func=np.nanmean, attr='skysub'):
@@ -654,8 +653,7 @@ class LRS2Multi:
         G = Gaussian1DKernel(kernel)
         self.spec1D = convolution_smooth(self.spec1D, G)
         self.spec1Dsky = convolution_smooth(self.spec1Dsky, G)
-
-        
+    
     def round_up_to_odd(self, f):
         return int(np.ceil(f) // 2 * 2 + 1)
     
@@ -721,6 +719,8 @@ class LRS2Multi:
         outname = op.basename(self.filename.replace('multi', 'spectrum'))
         self.spec_ext[1] = self.spectrum
         self.spec_ext[2] = self.spectrum_error
+        self.spec_ext[3] = self.skyspectrum
+        self.spec_ext[4] = self.spectrum_error
         f1 = fits.PrimaryHDU(self.spec_ext)
         he = self.header
         for key in he.keys():
@@ -801,6 +801,8 @@ class LRS2Multi:
         return new_spec
 
     def make_cube(self, newwave, scale=0.4, ran=[-7., 7., -7., 7.],
+                  
+                  
                   radius=0.7, kernel=0.1):
         '''
         Make data cube for a given ifuslot
