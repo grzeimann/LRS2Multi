@@ -252,7 +252,7 @@ class LRS2Object:
                            correct_ftf_from_skylines=correct_ftf_from_skylines,
                            percentile=percentile, 
                            use_percentile_sky=use_percentile_sky,
-                           polymodel=False, polyorder=4)
+                           polymodel=polymodel, polyorder=polyorder)
             for i, L in enumerate(self.sides[key]):
                 if ((L.channel == self.blue_other_channel) or
                     (L.channel==self.red_other_channel)):
@@ -283,7 +283,7 @@ class LRS2Object:
                           correct_ftf_from_skylines=correct_ftf_from_skylines,
                           percentile=percentile, 
                           use_percentile_sky=use_percentile_sky,
-                          polymodel=False, polyorder=4)
+                          polymodel=polymodel, polyorder=polyorder)
     
     def set_manual_extraction(self, xc=None, yc=None, skypos=None,
                               xoff=None, yoff=None, detwave=None, 
