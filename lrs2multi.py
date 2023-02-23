@@ -19,7 +19,7 @@ import os.path as op
 import matplotlib.pyplot as plt
 import warnings
 from astropy.io import fits
-from astropy.modeling.models import Gaussian2D
+from astropy.modeling.models import Gaussian2D, Polynomial2D
 from astropy.convolution import convolve, Gaussian1DKernel, Gaussian2DKernel
 from astropy.convolution import interpolate_replace_nans
 
@@ -451,7 +451,8 @@ class LRS2Multi:
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
                         obj_sky_thresh=1., ncomp=25, bins=25,
                         peakthresh=7., pca_iter=1, percentile=25,
-                        use_percentile_sky=False):
+                        use_percentile_sky=False, polymodel=False,
+                        polyorder=4):
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
@@ -475,6 +476,23 @@ class LRS2Multi:
         self.fiber_sky = np.nanmedian(self.data[sky_sel], axis=0)
         sky = self.fiber_sky[np.newaxis, :] * np.ones((280,))[:, np.newaxis]
         self.sky = sky
+        if polymodel:
+            fitter = LevMarLSQFitter()
+            for i in np.arange(len(self.wave)):
+                Y = self.data[:, i]
+                offx = self.adrx[i] - self.adrx0
+                offy = self.adry[i] - self.adry0
+                x = xc + offx
+                y = yc + offy
+                d = np.sqrt((self.x - x)**2 + (self.y - y)**2)
+                rsel = d > obj_radius
+                rsel = rsel * (Y != 0.) * np.isfinite(Y)
+                P = Polynomial2D(polyorder)
+                if rsel.sum() > (polyorder*5):
+                    fit = fitter(P, self.x[rsel], self.y[rsel], Y[rsel])
+                    mod = fit(self.x, self.y)
+                    self.sky[:, i] = mod
+            self.log.info('%s Finished Polynomial Extraction' %(op.basename(self.filename)))
         self.skysub = self.data - self.sky
         self.pca_sky = self.skysub * np.nan
         self.local_sky = self.skysub * np.nan
@@ -548,6 +566,7 @@ class LRS2Multi:
                     self.pca_sky_temp[i] = ycopy
                 self.pca_sky += self.pca_sky_temp
                 self.skysub = self.skysub - self.pca_sky_temp
+            
             
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
                          wave_window=None, use_aperture=True, radius=2.5,

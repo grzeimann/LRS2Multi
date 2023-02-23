@@ -24,9 +24,6 @@ class LRS2Object:
     
     Examples
     --------
-    
-    
-        
     '''
     def __init__(self, filenames, lrs2raw_objects=None, detwave=6563., wave_window=10.,
                  red_detect_channel='red', blue_detect_channel='orange',
@@ -155,7 +152,8 @@ class LRS2Object:
                         correct_ftf_from_skylines=False,
                         func=np.nanmean, local_kernel=7., obj_radius=3.,
                         obj_sky_thresh=1., ncomp=25, bins=25, peakthresh=7.,
-                        pca_iter=1, percentile=25, use_percentile_sky=False):
+                        pca_iter=1, percentile=25, use_percentile_sky=False,
+                        polymodel=False, polyorder=4):
         '''
         
 
@@ -225,6 +223,10 @@ class LRS2Object:
         peakthresh : float, optional
             The threshold for identifying sky lines above the median sky value
             to subtract in the pca algorithm. The default is 7.
+        polymodel: bool, optional
+            Use a polynomial background for sky subtraction
+        polyorder: int, optional
+            The polynomial order for polynomial subtraction
 
         Returns
         -------
@@ -249,7 +251,8 @@ class LRS2Object:
                                       peakthresh=peakthresh, pca_iter=pca_iter,
                            correct_ftf_from_skylines=correct_ftf_from_skylines,
                            percentile=percentile, 
-                           use_percentile_sky=use_percentile_sky)
+                           use_percentile_sky=use_percentile_sky,
+                           polymodel=False, polyorder=4)
             for i, L in enumerate(self.sides[key]):
                 if ((L.channel == self.blue_other_channel) or
                     (L.channel==self.red_other_channel)):
@@ -279,7 +282,8 @@ class LRS2Object:
                                       peakthresh=peakthresh, pca_iter=pca_iter,
                           correct_ftf_from_skylines=correct_ftf_from_skylines,
                           percentile=percentile, 
-                          use_percentile_sky=use_percentile_sky)
+                          use_percentile_sky=use_percentile_sky,
+                          polymodel=False, polyorder=4)
     
     def set_manual_extraction(self, xc=None, yc=None, skypos=None,
                               xoff=None, yoff=None, detwave=None, 
@@ -808,8 +812,6 @@ class LRS2Object:
                                  flux=nd.data*nd.unit, uncertainty=nd.uncertainty,
                                  mask=nd.mask)
         
-
-        
     def combine_cubes(self):
         '''
         Create a SN-weighted single cube from multiple observations
@@ -988,3 +990,6 @@ class LRS2Object:
         if outname is None:
             outname = L.header['QOBJECT'] + '_combined_cube.fits'
         hdu.writeto(outname, overwrite=True)
+        
+        
+        
