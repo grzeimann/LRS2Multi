@@ -529,7 +529,7 @@ class LRS2Multi:
                         fit = fitter(P, self.x[msel], self.y[msel], Y[msel])
                         mod = fit(self.x[rowsel], self.y[rowsel])
                         self.sky[rowsel, i] = mod
-            self.log.info('%s Finished Polynomial Subtraction' %(op.basename(self.filename)))
+            self.log.info('%s Finished Line by Line Subtraction' %(op.basename(self.filename)))
         self.skysub = self.data - self.sky
         self.pca_sky = self.skysub * np.nan
         self.local_sky = self.skysub * np.nan
