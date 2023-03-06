@@ -19,7 +19,7 @@ import os.path as op
 import matplotlib.pyplot as plt
 import warnings
 from astropy.io import fits
-from astropy.modeling.models import Gaussian2D, Polynomial2D
+from astropy.modeling.models import Gaussian2D, Polynomial2D, Polynomial1D
 from astropy.convolution import convolve, Gaussian1DKernel, Gaussian2DKernel
 from astropy.convolution import interpolate_replace_nans
 
@@ -462,7 +462,7 @@ class LRS2Multi:
                         peakthresh=7., pca_iter=1, percentile=25,
                         use_percentile_sky=False, polymodel=False,
                         polyorder=4, sky_annulus=False, inner_sky_radius=2.5,
-                        outer_sky_radius=5.):
+                        outer_sky_radius=5., line_by_line=False):
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
@@ -506,6 +506,29 @@ class LRS2Multi:
                     fit = fitter(P, self.x[rsel], self.y[rsel], Y[rsel])
                     mod = fit(self.x, self.y)
                     self.sky[:, i] = mod
+            self.log.info('%s Finished Polynomial Subtraction' %(op.basename(self.filename)))
+        
+        if line_by_line:
+            fitter = LevMarLSQFitter()
+            uy = np.unique(self.y)
+            
+            for i in np.arange(len(self.wave)):
+                Y = self.data[:, i]
+                offx = self.adrx[i] - self.adrx0
+                offy = self.adry[i] - self.adry0
+                x = xc + offx
+                y = yc + offy
+                d = np.sqrt((self.x - x)**2 + (self.y - y)**2)
+                rsel = d > obj_radius
+                rsel = rsel * (Y != 0.) * np.isfinite(Y)
+                P = Polynomial1D(polyorder)
+                for uyi in uy:
+                    rowsel = self.y == uyi
+                    msel = rsel*rowsel
+                    if msel.sum() > (polyorder + 3):
+                        fit = fitter(P, self.x[msel], self.y[msel], Y[msel])
+                        mod = fit(self.x[rowsel], self.y[rowsel])
+                        self.sky[rowsel, i] = mod
             self.log.info('%s Finished Polynomial Subtraction' %(op.basename(self.filename)))
         self.skysub = self.data - self.sky
         self.pca_sky = self.skysub * np.nan
