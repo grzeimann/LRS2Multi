@@ -452,7 +452,8 @@ class LRS2Multi:
                         obj_sky_thresh=1., ncomp=25, bins=25,
                         peakthresh=7., pca_iter=1, percentile=25,
                         use_percentile_sky=False, polymodel=False,
-                        polyorder=4):
+                        polyorder=4, sky_annulus=False, inner_sky_radius=2.5,
+                        outer_sky_radius=5.):
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
@@ -470,6 +471,10 @@ class LRS2Multi:
             sky_sel = self.sky_sel
         else:
             sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
+        if sky_annulus:
+            isky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > inner_sky_radius
+            osky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) < outer_sky_radius
+            sky_sel = isky_sel * osky_sel
         if hasattr(self, 'skymask'):
             sky_sel = sky_sel * self.skymask
         self.skyfiber_sel = sky_sel
