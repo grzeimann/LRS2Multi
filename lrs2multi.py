@@ -264,7 +264,8 @@ class LRS2Multi:
     
     def plot_image(self, detwave=None, wave_window=None, quick_skysub=True,
                    func=np.nanmean, radius=4., attr='data',
-                   sky_radius=5., sky_image=False):
+                   sky_radius=5., sky_image=False,
+                   sky_annulus=False, inner_sky_radius=3., outer_sky_radius=4.):
         # Collapse spectrum 
         if detwave is None:
             detwave = self.detwave
@@ -305,8 +306,16 @@ class LRS2Multi:
         xp = radius * np.cos(t) + xc
         yp = radius * np.sin(t) + yc
         self.ax.plot(xp, yp, 'k--', lw=2)
-        xp = sky_radius * np.cos(t) + xc
-        yp = sky_radius * np.sin(t) + yc
+        if sky_annulus:
+            xp = inner_sky_radius * np.cos(t) + xc
+            yp = inner_sky_radius * np.sin(t) + yc
+            self.ax.plot(xp, yp, 'r--', lw=2)
+            xp = outer_sky_radius * np.cos(t) + xc
+            yp = outer_sky_radius * np.sin(t) + yc
+            self.ax.plot(xp, yp, 'r--', lw=2)
+        else:
+            xp = sky_radius * np.cos(t) + xc
+            yp = sky_radius * np.sin(t) + yc
         self.ax.plot(xp, yp, 'r--', lw=2)
         self.ax.tick_params(axis='both', which='both', direction='in')
         self.ax.tick_params(axis='y', which='both', left=True, right=True)
