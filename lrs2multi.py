@@ -636,8 +636,8 @@ class LRS2Multi:
             d = np.sqrt((self.x - x)**2 + (self.y - y)**2)
             rsel = d < radius
             apcor = circarea / (rsel.sum() * hexarea)
-            cor = rsel.sum()
             if use_aperture:
+                cor = rsel.sum()
                 spectrum[i] = np.nansum(self.skysub[rsel, i], axis=0) * apcor
                 spectrum_error[i] = np.sqrt(np.nansum(
                                          self.error[rsel, i]**2, axis=0)) * apcor
@@ -645,7 +645,6 @@ class LRS2Multi:
             else:
                 W = model(self.x - offx, self.y - offy)
                 WT = model(self.largex - offx, self.largey - offy)
-                print(i, W[rsel].sum() / WT.sum())
                 cor[i] = W[rsel].sum() / WT.sum()
                 W = W / W[rsel].sum()
                 spectrum[i] = (np.nansum(W[rsel] * self.skysub[rsel, i]) /
