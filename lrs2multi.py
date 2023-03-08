@@ -501,7 +501,7 @@ class LRS2Multi:
                 d = np.sqrt((self.x - x)**2 + (self.y - y)**2)
                 rsel = d > obj_radius
                 rsel = rsel * (Y != 0.) * np.isfinite(Y)
-                P = Polynomial2D(polyorder)
+                P = Polynomial2D(polyorder, c0_0=np.nanmedian(Y[rsel]))
                 if rsel.sum() > (polyorder*5):
                     fit = fitter(P, self.x[rsel], self.y[rsel], Y[rsel])
                     mod = fit(self.x, self.y)
