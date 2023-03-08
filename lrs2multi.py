@@ -645,6 +645,7 @@ class LRS2Multi:
             else:
                 W = model(self.x - offx, self.y - offy)
                 WT = model(self.largex - offx, self.largey - offy)
+                print(i, W[rsel].sum() / WT.sum())
                 cor[i] = W[rsel].sum() / WT.sum()
                 W = W / W[rsel].sum()
                 spectrum[i] = (np.nansum(W[rsel] * self.skysub[rsel, i]) /
