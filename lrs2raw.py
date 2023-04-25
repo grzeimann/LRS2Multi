@@ -131,7 +131,9 @@ class LRS2Raw:
             self.info[channel].data[:] /= self.info[channel].response[np.newaxis, :] 
             self.info[channel].datae[:] *= 51.4e4 / area / transparency
             self.info[channel].datae[:] /= self.info[channel].ftf
-            self.info[channel].datae[:] /= self.info[channel].response[np.newaxis, :] 
+            self.info[channel].datae[:] /= self.info[channel].response[np.newaxis, :]
+            self.info[channel].header['MILLUM'] = area
+            self.info[channel].header['THROUGHP'] = transparency
             cnt += 1
     
     class ChannelInfo:
