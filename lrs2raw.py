@@ -272,13 +272,15 @@ class LRS2Raw:
             M = []
             path = op.join(path, self.date)
             key = list(self.info.keys())[0]
+            print(key)
             DT = self.info[key].header['DATE-OBS']
             exptime = self.info[key].header['EXPTIME']
             y, m, d, h, mi, s = [int(x) for x in [DT[:4], DT[4:6], DT[6:8], DT[9:11],
                                  DT[11:13], DT[13:15]]]
             d0 = datetime(y, m, d, h, mi, s)
             tarfolders = op.join(path, 'gc*', '*.tar')
-            tarfolders = glob.glob(tarfolders)
+            tarfolders = sorted(glob.glob(tarfolders))
+            print(tarfolders)
             if len(tarfolders) == 0:
                 area = 51.4e4
                 self.log.info('No guide camera tarfolders found')
