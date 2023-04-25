@@ -111,6 +111,7 @@ class LRS2Raw:
         self.side = side
         self.info = {}
         name = 'multi_%s_%07d_%s_%s.fits'
+        cnt = 0
         for channel in side_dict[self.side]:
             self.info[channel] = self.ChannelInfo(channel)
             self.reduce_channel(filename, channel_dict[channel], channel, 
@@ -120,6 +121,12 @@ class LRS2Raw:
             self.info[channel].date = date
             self.info[channel].observation_number = observation_number
             self.info[channel].exposure_number = exposure_number
+            if cnt == 0:
+                area, transparency, iq = self.get_mirror_illumination_guider()
+            self.info[channel].area = area
+            self.info[channel].transparency = transparency
+            self.info[channel].iq = iq
+            cnt += 1
     
     class ChannelInfo:
         
@@ -258,13 +265,15 @@ class LRS2Raw:
         return area, transpar, iq
 
 
-    def get_mirror_illumination_guider(self,  exptime, default=51.4e4, default_t=1.,
+    def get_mirror_illumination_guider(self, default=51.4e4, default_t=1.,
                                        default_iq=1.8,
                                        path='/work/03946/hetdex/maverick'):
         try:
             M = []
             path = op.join(path, self.date)
-            DT = self.header['DATE-OBS']
+            key = list(self.info.keys())[0]
+            DT = self.info[key].header['DATE-OBS']
+            exptime = self.info[key].header['EXPTIME']
             y, m, d, h, mi, s = [int(x) for x in [DT[:4], DT[4:6], DT[6:8], DT[9:11],
                                  DT[11:13], DT[13:15]]]
             d0 = datetime(y, m, d, h, mi, s)
