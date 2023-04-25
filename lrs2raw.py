@@ -8,12 +8,13 @@ Created on Tue Aug  9 09:48:01 2022
 import logging
 import numpy as np
 import os.path as op
+import os
 import warnings
 import glob
 from astropy.io import fits
 from fiber_utils import base_reduction, rectify, get_powerlaw
 from fiber_utils import get_spectra_error, get_spectra, get_spectra_chi2
-
+from datetime import datetime
 import tarfile
 import sys
 
@@ -55,6 +56,7 @@ class LRS2Raw:
 
         '''
         self.setup_logging()
+        self.date = date
         side_dict = {'blue': ['uv', 'orange'], 'red': ['red', 'farred']}
         channel_dict = {'uv': ['056LL', '056LU'], 
                         'orange': ['056RU', '056RL'],
@@ -228,3 +230,80 @@ class LRS2Raw:
                                                 self.info[channel].def_wave*0.,
                                                 self.info[channel].def_wave*0.,
                                                 self.info[channel].norm])
+        
+    def get_mirror_illumination_throughput(self, fn=None, default=51.4e4, default_t=1.,
+                                           default_iq=1.8):
+        ''' Use hetillum from illum_lib to calculate mirror illumination (cm^2) '''
+        try:
+            F = fits.open(fn)
+            names = ['RHO_STRT', 'THE_STRT', 'PHI_STRT', 'X_STRT', 'Y_STRT']
+            r, t, p, x, y = [F[0].header[name] for name in names]
+            mirror_illum = float(os.popen('/home1/00156/drory/illum_lib/hetillum -p'
+                                 ' -x "[%0.4f,%0.4f,%0.4f]" "[%0.4f,%0.4f]" 256' %
+                                          (x, y, p, 0.042, 0.014)).read().split('\n')[0])
+            area = mirror_illum * default
+            if (F[0].header['TRANSPAR'] < 0.1) or (F[0].header['TRANSPAR'] > 1.05):
+                transpar = default_t
+            else:
+                transpar = F[0].header['TRANSPAR'] * 1.
+            if (F[0].header['IQ'] < 0.8) or (F[0].header['IQ'] > 4.0):
+                iq = default_iq
+            else:
+                iq = F[0].header['IQ']
+        except:
+            self.log.info('Using default mirror illumination value')
+            area = default
+            transpar = default_t
+            iq = default_iq
+        return area, transpar, iq
+
+
+    def get_mirror_illumination_guider(self,  exptime, default=51.4e4, default_t=1.,
+                                       default_iq=1.8,
+                                       path='/work/03946/hetdex/maverick'):
+        try:
+            M = []
+            path = op.join(path, self.date)
+            DT = self.header['DATE-OBS']
+            y, m, d, h, mi, s = [int(x) for x in [DT[:4], DT[4:6], DT[6:8], DT[9:11],
+                                 DT[11:13], DT[13:15]]]
+            d0 = datetime(y, m, d, h, mi, s)
+            tarfolders = op.join(path, 'gc*', '*.tar')
+            tarfolders = glob.glob(tarfolders)
+            if len(tarfolders) == 0:
+                area = 51.4e4
+                self.log.info('No guide camera tarfolders found')
+                return default, default_t, default_iq
+            for tarfolder in tarfolders:
+                T = tarfile.open(tarfolder, 'r')
+
+                init_list = sorted([name for name in T.getnames()
+                                    if name[-5:] == '.fits'])
+                final_list = []
+                
+                for t in init_list:
+                    DT = op.basename(t).split('_')[0]
+                    y, m, d, h, mi, s = [int(x) for x in [DT[:4], DT[4:6], DT[6:8],
+                                         DT[9:11], DT[11:13], DT[13:15]]]
+                    d = datetime(y, m, d, h, mi, s)
+                    p = (d - d0).seconds
+
+                    if (p > -10.) * (p < exptime+10.):
+                        final_list.append(t)
+                for fn in final_list:
+                    fobj = T.extractfile(T.getmember(fn))
+                    M.append(self.get_mirror_illumination_throughput(fobj))
+            M = np.array(M)
+            sel = M[:, 2] != 1.8
+            if sel.sum() > 0.:
+                transpar = np.median(M[sel, 1])
+                area = np.median(M[sel, 0])
+                iq = np.median(M[sel, 2])
+            else:
+                area = 51.4e4
+                transpar = 1.
+                iq = 1.8
+            return area, transpar, iq
+        except: 
+            self.log.info('Using default mirror illumination: %0.2f m^2' % (default/1e4))
+            return default, default_t, default_iq
