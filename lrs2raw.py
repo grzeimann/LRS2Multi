@@ -272,11 +272,10 @@ class LRS2Raw:
             M = []
             path = op.join(path, self.date)
             key = list(self.info.keys())[0]
-            print(key)
-            DT = self.info[key].header['DATE-OBS']
+            DT = self.info[key].header['DATE']
             exptime = self.info[key].header['EXPTIME']
-            y, m, d, h, mi, s = [int(x) for x in [DT[:4], DT[4:6], DT[6:8], DT[9:11],
-                                 DT[11:13], DT[13:15]]]
+            y, m, d, h, mi, s = [int(x) for x in [DT[:4], DT[5:7], DT[8:10], DT[11:13],
+                                 DT[14:16], DT[17:19]]]
             d0 = datetime(y, m, d, h, mi, s)
             tarfolders = op.join(path, 'gc*', '*.tar')
             tarfolders = sorted(glob.glob(tarfolders))
