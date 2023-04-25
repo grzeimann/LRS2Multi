@@ -260,7 +260,6 @@ class LRS2Raw:
             else:
                 iq = F[0].header['IQ']
         except:
-            self.log.info('Using default mirror illumination value')
             area = default
             transpar = default_t
             iq = default_iq
@@ -281,10 +280,8 @@ class LRS2Raw:
             d0 = datetime(y, m, d, h, mi, s)
             tarfolders = op.join(path, 'gc*', '*.tar')
             tarfolders = sorted(glob.glob(tarfolders))
-            print(tarfolders)
             if len(tarfolders) == 0:
                 area = 51.4e4
-                self.log.info('No guide camera tarfolders found')
                 return default, default_t, default_iq
             for tarfolder in tarfolders:
                 T = tarfile.open(tarfolder, 'r')
@@ -317,5 +314,4 @@ class LRS2Raw:
                 iq = 1.8
             return area, transpar, iq
         except: 
-            self.log.info('Using default mirror illumination: %0.2f m^2' % (default/1e4))
             return default, default_t, default_iq
