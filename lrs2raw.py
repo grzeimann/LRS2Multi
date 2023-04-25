@@ -126,8 +126,8 @@ class LRS2Raw:
             self.info[channel].area = area
             self.info[channel].transparency = transparency
             self.info[channel].iq = iq
-            self.info[channel].data[:] *= 51.4e4 / area / transparency
-            self.info[channel].datae[:] *= 51.4e4 / area / transparency
+            self.info[channel].data[:] *= 51.4e4 / area / transparency / self.info[channel].response[:, np.newaxis]
+            self.info[channel].datae[:] *= 51.4e4 / area / transparency / self.info[channel].response[:, np.newaxis]
             cnt += 1
     
     class ChannelInfo:
@@ -135,7 +135,7 @@ class LRS2Raw:
         # Create channel info
         def __init__(self, channel):
             f = fits.open(op.join(get_script_path(), 'calibrations',
-                                  'cal_%s.fits' % channel))
+                                  'new_cal_%s.fits' % channel))
             self.wavelength = f['wavelength'].data
             self.masterbias = f['masterbias'].data
             self.trace = f['trace'].data
@@ -146,6 +146,8 @@ class LRS2Raw:
             self.adrx = f['adrx'].data
             self.adry = f['adry'].data
             self.norm = f['norm'].data
+            self.response = f['response'].data
+            self.ftf = f['ftf'].data
     
     def setup_logging(self, logname='lrs2raw'):
         '''Set up a logger for shuffle with a name ``lrs2 advanced``.
