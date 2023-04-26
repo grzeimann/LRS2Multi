@@ -122,7 +122,7 @@ class LRS2Raw:
             self.info[channel].observation_number = observation_number
             self.info[channel].exposure_number = exposure_number
             if cnt == 0:
-                area, transparency, iq = self.get_mirror_illumination_guider()
+                area, transparency, iq = self.get_mirror_illumination_guider(channel)
             self.info[channel].area = area
             self.info[channel].transparency = transparency
             self.info[channel].iq = iq
@@ -274,15 +274,14 @@ class LRS2Raw:
         return area, transpar, iq
 
 
-    def get_mirror_illumination_guider(self, default=51.4e4, default_t=1.,
-                                       default_iq=1.8,
+    def get_mirror_illumination_guider(self, channel, default=51.4e4, 
+                                       default_t=1., default_iq=1.8,
                                        path='/work/03946/hetdex/maverick'):
         try:
             M = []
             path = op.join(path, self.date)
-            key = list(self.info.keys())[0]
-            DT = self.info[key].header['DATE']
-            exptime = self.info[key].header['EXPTIME']
+            DT = self.info[channel].header['DATE']
+            exptime = self.info[channel].header['EXPTIME']
             y, m, d, h, mi, s = [int(x) for x in [DT[:4], DT[5:7], DT[8:10], DT[11:13],
                                  DT[14:16], DT[17:19]]]
             d0 = datetime(y, m, d, h, mi, s)
