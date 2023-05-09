@@ -205,6 +205,8 @@ class LRS2Raw:
         # Basic reduction
         array_flt1, e1, header = base_reduction(filename1, tarfolder=tarfolder,
                                                 get_header=True)
+        if header['EXPTIME'] < 0:
+            header['EXPTIME'] = header['REXPTIME'] + 7
         array_flt2, e2 = base_reduction(filename2, tarfolder=tarfolder)
         image = np.vstack([array_flt1, array_flt2])
         E = np.vstack([e1, e2])
