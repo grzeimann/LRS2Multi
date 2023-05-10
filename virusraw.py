@@ -154,7 +154,7 @@ class VIRUSRaw:
                     if ifusl == ifuslot and amp == ampi:
                         inds.append(cnt)
                     cnt += 1
-                    
+            print(inds)
             # ifupos, wavelength, masterbias, trace, masterflt
             for attr in ['wavelength', 'masterbias', 'trace', 'masterflat',
                          'ifupos', 'mastertwi']:
