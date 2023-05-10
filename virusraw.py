@@ -147,9 +147,9 @@ class VIRUSRaw:
             ifuslots = ['%03d' % i for i in h5table.cols.ifuslot[:]]
             amps = [x.decode("utf-8") for x in h5table.cols.amp[:]]
             
-            cnt = 0
             inds = []
             for amp in amp_list:
+                cnt = 0
                 for ifusl, ampi in zip(ifuslots, amps):
                     if ifusl == ifuslot and amp == ampi:
                         inds.append(cnt)
