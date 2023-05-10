@@ -221,10 +221,14 @@ class VIRUSRaw:
 
         '''
         
-        filename1 = filename.replace('%sLL' % ifuslot, amp_list[0])
-        filename2 = filename.replace('%sLL' % ifuslot, amp_list[1])
-        filename3 = filename.replace('%sLL' % ifuslot, amp_list[2])
-        filename4 = filename.replace('%sLL' % ifuslot, amp_list[3])
+        filename1 = filename.replace('%sLL' % ifuslot, 
+                                     '%s%s' % (ifuslot, amp_list[0]))
+        filename2 = filename.replace('%sLL' % ifuslot, 
+                                     '%s%s' % (ifuslot, amp_list[1]))
+        filename3 = filename.replace('%sLL' % ifuslot, 
+                                     '%s%s' % (ifuslot, amp_list[2]))
+        filename4 = filename.replace('%sLL' % ifuslot, 
+                                     '%s%s' % (ifuslot, amp_list[3]))
         
         # Basic reduction
         print(tarfolder)
