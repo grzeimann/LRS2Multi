@@ -62,7 +62,7 @@ class VIRUSRaw:
 
         # Rectified wavelength
         def_wave = np.linspace(3470., 5540., 1036)
-
+        amporder = ['LL', 'LU', 'RU', 'RL']
         # ADR model
         wADR = [3500., 4000., 4500., 5000., 5500.]
         ADRx = [-0.74, -0.4, -0.08, 0.08, 0.20]
@@ -116,9 +116,10 @@ class VIRUSRaw:
         name = 'multi_%s_%07d_%s_%s.fits'
         cnt = 0
         channel = 'virus'
-        self.info[channel] = self.ChannelInfo(ifuslot, hdf5file)
+        self.info[channel] = self.ChannelInfo(ifuslot, hdf5file,
+                                              amp_list=amporder)
         self.reduce_channel(filename, ifuslot, 
-                            tarfolder=tarfolder)
+                            tarfolder=tarfolder, amp_list=amporder)
         self.info[channel].filename = name % (date, observation_number,
                                               expstr, channel)
         self.info[channel].date = date
@@ -205,7 +206,7 @@ class VIRUSRaw:
 
     def reduce_channel(self, filename, ifuslot, channel='virus',
                        tarfolder=None,
-                       amp_list=['LL', 'LU', 'RL', 'RU']):
+                       amp_list=['LL', 'LU', 'RU', 'RL']):
         '''
         
 
