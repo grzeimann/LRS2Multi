@@ -156,7 +156,7 @@ class VIRUSRaw:
                     cnt += 1
             print(inds)
             # ifupos, wavelength, masterbias, trace, masterflt
-            for attr in ['wavelength', 'masterbias', 'trace', 'masterflat',
+            for attr in ['wavelength', 'masterbias', 'trace', 'masterflt',
                          'ifupos', 'mastertwi']:
                 image_list = []
                 for ind in inds:
