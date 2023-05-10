@@ -282,7 +282,7 @@ class VIRUSRaw:
                                                 self.info[channel].def_wave*0.,
                                                 self.info[channel].def_wave*0.,
                                                 self.info[channel].def_wave*0.,
-                                                self.info[channel].norm])
+                                                self.info[channel].response])
         
     def get_mirror_illumination_throughput(self, fn=None, default=51.4e4, default_t=1.,
                                            default_iq=1.8):
