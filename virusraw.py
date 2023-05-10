@@ -126,6 +126,8 @@ class VIRUSRaw:
         self.info[channel].exposure_number = exposure_number
         if cnt == 0:
             area, transparency, iq = self.get_mirror_illumination_guider(channel)
+        self.log.info('Transparency, Area, Exptime: %0.2f, %0.2f, %0.1f' %
+                      (transparency, area / 51.4e4, self.info[channel].exptime))
         self.info[channel].area = area
         self.info[channel].transparency = transparency
         self.info[channel].iq = iq
@@ -238,6 +240,7 @@ class VIRUSRaw:
                                                 get_header=True)
         if header['EXPTIME'] < 0:
             header['EXPTIME'] = header['REXPTIME'] + 7
+        self.info[channel].exptime = header['EXPTIME']
         array_flt2, e2 = base_reduction(filename2, tarfolder=tarfolder)
         array_flt3, e3 = base_reduction(filename3, tarfolder=tarfolder)
         array_flt4, e4 = base_reduction(filename4, tarfolder=tarfolder)
