@@ -176,7 +176,7 @@ class VIRUSRaw:
             T = Table.read(op.join(DIRNAME, 'calibrations/virus_normalization.txt'),
                                    format='ascii.fixed_width_two_line')
             normalization = np.array(T['normalization'])
-            self.response = throughput * normalization
+            self.response = throughput / normalization
     
     def setup_logging(self, logname='virusraw'):
         '''Set up a logger for shuffle with a name ``lrs2 advanced``.
