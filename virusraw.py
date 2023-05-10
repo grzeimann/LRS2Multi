@@ -227,6 +227,7 @@ class VIRUSRaw:
         filename4 = filename.replace('%sLL' % ifuslot, amp_list[3])
         
         # Basic reduction
+        print(tarfolder)
         array_flt1, e1, header = base_reduction(filename1, tarfolder=tarfolder,
                                                 get_header=True)
         if header['EXPTIME'] < 0:
