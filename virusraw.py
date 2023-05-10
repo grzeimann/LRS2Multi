@@ -154,13 +154,16 @@ class VIRUSRaw:
                     if ifusl == ifuslot and amp == ampi:
                         inds.append(cnt)
                     cnt += 1
-            print(inds)
             # ifupos, wavelength, masterbias, trace, masterflt
             for attr in ['wavelength', 'masterbias', 'trace', 'masterflt',
                          'ifupos', 'mastertwi']:
                 image_list = []
+                cnt = 0
                 for ind in inds:
                     image_list.append(getattr(h5table.cols, attr)[ind])
+                    if attr == 'trace':
+                        image_list[-1] = image_list[-1] + cnt * 1032
+                        cnt += 1
                 image = np.vstack(image_list)
                 setattr(self, attr, image)
             self.def_wave = np.linspace(3470, 5540, 1036)
@@ -231,7 +234,6 @@ class VIRUSRaw:
                                      '%s%s' % (ifuslot, amp_list[3]))
         
         # Basic reduction
-        print(tarfolder)
         array_flt1, e1, header = base_reduction(filename1, tarfolder=tarfolder,
                                                 get_header=True)
         if header['EXPTIME'] < 0:
