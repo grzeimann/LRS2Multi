@@ -261,7 +261,7 @@ class VIRUSRaw:
         specerr = get_spectra_error(E, self.info[channel].trace)
         chi2 = get_spectra_chi2(self.info[channel].masterflt, image, E, 
                                 self.info[channel].trace)
-        
+        self.info[channel].chi2 = chi2
         # Mark pixels effected by cosmics
         badpix = chi2 > 10.
         specerr[badpix] = np.nan
