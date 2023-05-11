@@ -143,7 +143,7 @@ class VIRUSRaw:
         
         # Create channel info
         def __init__(self, ifuslot, hdf5file, 
-                     amp_list=['LL', 'LU', 'RU', 'RL']):
+                     amp_list=['RU', 'RL', 'LL', 'LU']):
             # get h5 file and info
             h5file = tables.open_file(hdf5file, mode='r')
             h5table = h5file.root.Cals
@@ -206,7 +206,7 @@ class VIRUSRaw:
 
     def reduce_channel(self, filename, ifuslot, channel='virus',
                        tarfolder=None,
-                       amp_list=['LL', 'LU', 'RU', 'RL']):
+                       amp_list=['RU', 'RL', 'LL', 'LU']):
         '''
         
 
