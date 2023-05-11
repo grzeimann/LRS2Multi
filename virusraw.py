@@ -62,7 +62,7 @@ class VIRUSRaw:
 
         # Rectified wavelength
         def_wave = np.linspace(3470., 5540., 1036)
-        amporder = ['LL', 'LU', 'RU', 'RL']
+        amporder = ['RU', 'RL', 'LL', 'LU']
         # ADR model
         wADR = [3500., 4000., 4500., 5000., 5500.]
         ADRx = [-0.74, -0.4, -0.08, 0.08, 0.20]
