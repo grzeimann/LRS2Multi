@@ -143,7 +143,7 @@ class VIRUSRaw:
         
         # Create channel info
         def __init__(self, ifuslot, hdf5file, 
-                     amp_list=['LL', 'LU', 'RU', 'RL']):
+                     amp_list=['RU', 'RL', 'LL', 'LU']):
             # get h5 file and info
             h5file = tables.open_file(hdf5file, mode='r')
             h5table = h5file.root.Cals
@@ -206,7 +206,7 @@ class VIRUSRaw:
 
     def reduce_channel(self, filename, ifuslot, channel='virus',
                        tarfolder=None,
-                       amp_list=['LL', 'LU', 'RU', 'RL']):
+                       amp_list=['RU', 'RL', 'LL', 'LU']):
         '''
         
 
@@ -261,7 +261,7 @@ class VIRUSRaw:
         specerr = get_spectra_error(E, self.info[channel].trace)
         chi2 = get_spectra_chi2(self.info[channel].masterflt, image, E, 
                                 self.info[channel].trace)
-        
+        self.info[channel].chi2 = chi2
         # Mark pixels effected by cosmics
         badpix = chi2 > 10.
         specerr[badpix] = np.nan
