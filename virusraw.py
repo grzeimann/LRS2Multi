@@ -126,12 +126,13 @@ class VIRUSRaw:
         self.info[channel].observation_number = observation_number
         self.info[channel].exposure_number = exposure_number
         if cnt == 0:
-            area, transparency, iq = self.get_mirror_illumination_guider(channel)
+            area, transparency, iq, M = self.get_mirror_illumination_guider(channel)
         self.log.info('Transparency, Area, Exptime: %0.2f, %0.2f, %0.1f' %
                       (transparency, area / 51.4e4, self.info[channel].exptime))
         self.info[channel].area = area
         self.info[channel].transparency = transparency
         self.info[channel].iq = iq
+        self.info[channel].guider_info = M
         self.info[channel].data[:] *= 51.4e4 / area / transparency 
         self.info[channel].data[:] /= self.info[channel].response[np.newaxis, :] 
         self.info[channel].datae[:] *= 51.4e4 / area / transparency
@@ -359,6 +360,6 @@ class VIRUSRaw:
                 area = 51.4e4
                 transpar = 1.
                 iq = 1.8
-            return area, transpar, iq
+            return area, transpar, iq, M
         except: 
-            return default, default_t, default_iq
+            return default, default_t, default_iq, np.array([])
