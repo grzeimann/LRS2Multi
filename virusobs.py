@@ -112,6 +112,7 @@ class VIRUSObs:
         if not self.LDLS_list:
             print('No Twi Exposures in twiRaw_list')
             return None
+        self.sci_list[0].log.info('Getting Fiber to Fiber Correction')
         channels = ['virus']
         for channel in channels:
             twidata = 0 * self.twiRaw_list[0].info[channel].data
@@ -150,6 +151,10 @@ class VIRUSObs:
         None.
 
         '''
+        if not self.arcRaw_list:
+            print('No Twi Exposures in twiRaw_list')
+            return None
+        self.sci_list[0].log.info('Getting Wavelength Correction')
         line_list = {}
         line_list['virus'] = [3610.508, 4046.565, 4358.335, 4678.149, 4799.912,
                       4916.068, 5085.822, 5460.750]
@@ -209,6 +214,7 @@ class VIRUSObs:
         if not self.DarkRaw_list:
             print('No Dark Exposures in darkRaw_list')
             return None
+        self.sci_list[0].log.info('Subtracting Dark')
         channels = ['virus']
         for channel in channels:
             zp = []
@@ -255,6 +261,7 @@ class VIRUSObs:
         None.
 
         '''
+        self.sci_list[0].log.info('Subtracting Sky')
         channels = ['virus']
         for channel in channels:
             for science in self.sciRaw_list:
@@ -282,6 +289,7 @@ class VIRUSObs:
         None.
     
         '''
+        self.sci_list[0].log.info('Getting Astrometry')
         channels = ['virus']
         for channel in channels:
             for cnt, science in enumerate(self.sciRaw_list):
