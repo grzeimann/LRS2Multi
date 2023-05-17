@@ -360,7 +360,7 @@ class VIRUSObs:
     
         '''
         channels = ['virus']
-        spec_list, dlist, back_list = ([], [], [])
+        spec_list, back_list = ([], [])
         for channel in channels:
             for cnt, science in enumerate(self.sciRaw_list):
                 dra = (np.cos(np.deg2rad(dec)) * (science.info[channel].ra - ra) * 3600.)
@@ -371,5 +371,9 @@ class VIRUSObs:
                     spec_list.append(sp)
                 for sp in science.info[channel].skysub[backsel]:
                     back_list.append(sp)
-        return spec_list, dlist, np.nansum(np.array(spec_list) - np.nanmedian(back_list), axis=0)
+        self.fiber_aperture_list = spec_list
+        self.fiber_back_list = back_list
+        self.extracted_spectrum = np.nansum(np.array(self.fiber_aperture_list) -
+                                            np.nanmedian(self.fiber_back_list),
+                                            axis=0)
             
