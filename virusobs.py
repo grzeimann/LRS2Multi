@@ -206,13 +206,13 @@ class VIRUSObs:
         None.
 
         '''
-        if not self.darkRaw_list:
+        if not self.DarkRaw_list:
             print('No Dark Exposures in darkRaw_list')
             return None
         channels = ['virus']
         for channel in channels:
             zp = []
-            for v in self.darkRaw_list:
+            for v in self.DarkRaw_list:
                 zp.append(v.info[channel].data)
             avg = np.nanmedian(zp, axis=0)
             nchunks = 14
@@ -229,9 +229,9 @@ class VIRUSObs:
                 p0 = np.polyfit(xi, Z[ind], 4)
                 model = np.polyval(p0, x)
                 image[ind] = model
-            mult1 = (self.darkRaw_list[0].info[channel].area *
-                     self.darkRaw_list[0].info[channel].transparency *
-                     self.darkRaw_list[0].info[channel].exptime)
+            mult1 = (self.DarkRaw_list[0].info[channel].area *
+                     self.DarkRaw_list[0].info[channel].transparency *
+                     self.DarkRaw_list[0].info[channel].exptime)
             for science in frame_list:
                 mult2 = (science.info[channel].area *
                          science.info[channel].transparency *
