@@ -113,9 +113,6 @@ class VIRUSObs:
         if not self.twiRaw_list:
             print('No Twi Exposures in twiRaw_list')
             return None
-        if not self.LDLSRaw_list:
-            print('No LDLS Exposures in ldlsRaw_list')
-            return None
         self.sciRaw_list[0].log.info('Getting Fiber to Fiber Correction')
         channels = ['virus']
         for channel in channels:
@@ -130,15 +127,18 @@ class VIRUSObs:
             medvals = np.nanmedian(ftf, axis=1)
             medval = np.nanmedian(medvals)
             mask = medvals < low_thresh * medval
-            y = []
-            for ldls in self.LDLSRaw_list:
-                y.append(ldls.info[channel].data / ftf)
-            avg = np.nanmedian(y, axis=0)
-            ldlsftf, smask = get_fiber_to_fiber(avg, twidatae, wave)
-            avg = avg / ldlsftf
-            avgspec = np.nanmedian(avg, axis=0)
-            div = avg / avgspec[np.newaxis, :]
-            ftf *= div
+            if not self.LDLSRaw_list:
+                print('No LDLS Exposures in ldlsRaw_list')
+            else:
+                y = []
+                for ldls in self.LDLSRaw_list:
+                    y.append(ldls.info[channel].data / ftf)
+                avg = np.nanmedian(y, axis=0)
+                ldlsftf, smask = get_fiber_to_fiber(avg, twidatae, wave)
+                avg = avg / ldlsftf
+                avgspec = np.nanmedian(avg, axis=0)
+                div = avg / avgspec[np.newaxis, :]
+                ftf *= div
             for sciRaw in self.sciRaw_list:
                 sciRaw.info[channel].ftf = ftf
                 sciRaw.info[channel].data /= ftf
