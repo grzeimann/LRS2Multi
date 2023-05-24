@@ -511,8 +511,8 @@ class VIRUSObs:
         hdu.header['CTYPE1'] = 'pixel'
         hdu.header['CTYPE2'] = 'pixel'
         hdu.header['CTYPE3'] = 'pixel'
-        hdu.header['CDELT1'] = (self.xgrid[0, 1] - self.xgrid[0, 0])*3600.
-        hdu.header['CDELT2'] = (self.ygrid[1, 0] - self.ygrid[0, 0])*3600.
+        hdu.header['CDELT1'] = (self.xgrid[0, 1] - self.xgrid[0, 0])/3600.
+        hdu.header['CDELT2'] = (self.ygrid[1, 0] - self.ygrid[0, 0])/3600.
         hdu.header['CDELT3'] = wave[1] - wave[0]
         for key in he.keys():
             if key in hdu.header:
