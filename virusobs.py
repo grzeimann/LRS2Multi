@@ -24,6 +24,7 @@ from astropy.convolution import convolve, Gaussian1DKernel
 from astropy.stats import biweight_midvariance
 import astropy.units as u
 from fiber_utils import get_fiber_to_fiber, find_peaks
+from scipy.interpolate import griddata
 
 
 warnings.filterwarnings("ignore")
@@ -59,6 +60,7 @@ class VIRUSObs:
         None.
 
         '''
+        self.def_wave = np.linspace(3470, 5540, 1036)
         self.sciRaw_list = sciRaw_list
         self.arcRaw_list = arcRaw_list
         self.twiRaw_list = twiRaw_list
@@ -110,7 +112,7 @@ class VIRUSObs:
             print('No Twi Exposures in twiRaw_list')
             return None
         if not self.LDLSRaw_list:
-            print('No Twi Exposures in twiRaw_list')
+            print('No LDLS Exposures in ldlsRaw_list')
             return None
         self.sciRaw_list[0].log.info('Getting Fiber to Fiber Correction')
         channels = ['virus']
@@ -152,7 +154,7 @@ class VIRUSObs:
 
         '''
         if not self.arcRaw_list:
-            print('No Twi Exposures in twiRaw_list')
+            print('No arc Exposures in arcRaw_list')
             return None
         self.sciRaw_list[0].log.info('Getting Wavelength Correction')
         line_list = {}
@@ -271,6 +273,7 @@ class VIRUSObs:
                 medsky = np.nanmedian(science.info[channel].data, axis=0)
                 science.info[channel].sky = medsky
                 science.info[channel].skysub = science.info[channel].data - medsky[np.newaxis, :]
+                
 
     def get_astrometry(self, dither_index=None,
                        fplane_file='/work/03730/gregz/maverick/fplaneall.txt'):
@@ -302,6 +305,7 @@ class VIRUSObs:
                                science.info[channel].skycoord.dec.deg, 
                                science.info[channel].header['PARANGLE'],
                                xc, yc, fplane_file=fplane_file)
+                science.info[channel].astrometry = A
                 x = science.info[channel].x
                 y = science.info[channel].y
                 if dither_index is not None:
@@ -310,6 +314,27 @@ class VIRUSObs:
                 ra, dec = A.get_ifupos_ra_dec(science.ifuslot, x, y)
                 science.info[channel].ra = ra
                 science.info[channel].dec = dec
+    
+    def get_delta_ra_dec(self):
+        '''
+
+
+        Returns
+        -------
+        None.
+
+        '''
+        channels = ['virus']
+        for channel in channels:
+            mra = np.mean(self.sciRaw_list[0].info[channel].ra)
+            mdec = np.mean(self.sciRaw_list[0].info[channel].dec)
+            for cnt, science in enumerate(self.sciRaw_list):
+                dra = (np.cos(np.deg2rad(mdec)) * (science.info[channel].ra - mra) * 3600.)
+                ddec = (science.info[channel].dec - mdec) * 3600
+                science.info[channel].ra_center = mra
+                science.info[channel].dec_center = mdec
+                science.info[channel].dra = dra
+                science.info[channel].ddec = ddec
                 
     def get_ADR_RAdec(self, xoff, yoff, astrometry_object):
         '''
@@ -332,11 +357,17 @@ class VIRUSObs:
             DESCRIPTION.
     
         '''
-        tRA, tDec = astrometry_object.tp.wcs_pix2world(xoff, yoff, 1)
-        ADRra = ((tRA - astrometry_object.ra0) * 3600. *
-                      np.cos(np.deg2rad(astrometry_object.dec0)))
-        ADRdec = (tDec - astrometry_object.dec0) * 3600.
-        return ADRra, ADRdec
+        channels = ['virus']
+        for channel in channels:
+            for cnt, science in enumerate(self.sciRaw_list):
+                xoff = science.adrx
+                yoff = science.adry
+                tRA, tDec = science.info[channel].astrometry.tp.wcs_pix2world(xoff, yoff, 1)
+                ADRra = ((tRA - science.info[channel].astrometry.ra0) * 3600. *
+                         np.cos(np.deg2rad(science.info[channel].astrometry.dec0)))
+                ADRdec = (tDec - science.info[channel].astrometry.dec0) * 3600.
+                science.info[channel].adrra = ADRra
+                science.info[channel].adrdec = ADRdec
             
     def get_spectrum(self, ra, dec, radius=3, ring_radius=2):
         '''
@@ -361,6 +392,7 @@ class VIRUSObs:
         '''
         channels = ['virus']
         spec_list, back_list = ([], [])
+        
         for channel in channels:
             for cnt, science in enumerate(self.sciRaw_list):
                 dra = (np.cos(np.deg2rad(dec)) * (science.info[channel].ra - ra) * 3600.)
@@ -377,3 +409,113 @@ class VIRUSObs:
                                             np.nanmedian(self.fiber_back_list),
                                             axis=0)
             
+    def make_cube(self, scale=0.7, ran=[-50, 50, -50, 50]):
+        '''
+        
+
+        Parameters
+        ----------
+        scale : TYPE, optional
+            DESCRIPTION. The default is 0.7.
+        ran : TYPE, optional
+            DESCRIPTION. The default is [-50, 50, -50, 50].
+        seeing_fac : TYPE, optional
+            DESCRIPTION. The default is 1.8.
+        radius : TYPE, optional
+            DESCRIPTION. The default is 1.5.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+        TYPE
+            DESCRIPTION.
+        TYPE
+            DESCRIPTION.
+        TYPE
+            DESCRIPTION.
+
+        '''
+        data, error = ([], [])
+        channels = ['virus']
+        for channel in channels:
+            for cnt, science in enumerate(self.sciRaw_list):
+                data.append(science.info[channel].skysub)
+                error.append(science.info[channel].datae)
+        data, error = [np.vstack(x) for x in [data, error]]
+        a, b = data.shape
+        N1 = int((ran[1] - ran[0]) / scale) + 1
+        N2 = int((ran[3] - ran[2]) / scale) + 1
+        xgrid, ygrid = np.meshgrid(np.linspace(ran[0], ran[1], N1),
+                                   np.linspace(ran[2], ran[3], N2))
+        Dcube = np.zeros((b,)+xgrid.shape)
+        Ecube = Dcube * 0.
+        area = np.pi * 0.75**2
+        for k in np.arange(b):
+            S = np.zeros((data.shape[0], 2))
+            for channel in channels:
+                for cnt, science in enumerate(self.sciRaw_list):
+                    S[:, 0] = science.info['virus'].dra - science.adrra[k]
+                    S[:, 1] = science.info['virus'].ddec - science.adrdec[k]
+            sel = np.isfinite(data[:, k])
+            if np.any(sel):
+                grid_z = griddata(S[sel], data[sel, k],
+                                  (xgrid, ygrid), method='linear')
+                Dcube[k, :, :] =  grid_z * scale**2 / area
+                grid_z = griddata(S[sel], error[sel, k],
+                                  (xgrid, ygrid), method='linear')
+                Ecube[k, :, :] = grid_z * scale**2 / area
+        self.cube = Dcube
+        self.error_cube = Ecube
+        self.xgrid = xgrid
+        self.ygrid = ygrid
+
+
+    def write_cube(self, outname):
+        '''
+        Write data cube to fits file
+        
+        Parameters
+        ----------
+        wave : 1d numpy array
+            Wavelength for data cube
+        xgrid : 2d numpy array
+            x-coordinates for data cube
+        ygrid : 2d numpy array
+            y-coordinates for data cube
+        Dcube : 3d numpy array
+            Data cube, corrected for ADR
+        outname : str
+            Name of the outputted fits file
+        he : object
+            hdu header object to carry original header information
+        '''
+        wave = self.def_wave
+        channels = ['virus']
+        for channel in channels:
+            for cnt, science in enumerate(self.sciRaw_list):
+                he = science.info[channel].header
+                racenter = science.info[channel].ra_center
+                deccenter = science.info[channel].dec_center
+        hdu = fits.PrimaryHDU(np.array(self.cube, dtype='float32'))
+        hdu.header['CRVAL1'] = racenter
+        hdu.header['CRVAL2'] = deccenter
+        hdu.header['CRVAL3'] = wave[0]
+        hdu.header['CRPIX1'] = self.xgrid.shape[1] / 2.
+        hdu.header['CRPIX2'] = self.xgrid.shape[0] / 2.
+        hdu.header['CRPIX3'] = 1
+        hdu.header['CTYPE1'] = 'pixel'
+        hdu.header['CTYPE2'] = 'pixel'
+        hdu.header['CTYPE3'] = 'pixel'
+        hdu.header['CDELT1'] = (self.xgrid[0, 1] - self.xgrid[0, 0])*3600.
+        hdu.header['CDELT2'] = (self.ygrid[1, 0] - self.ygrid[0, 0])*3600.
+        hdu.header['CDELT3'] = wave[1] - wave[0]
+        for key in he.keys():
+            if key in hdu.header:
+                continue
+            if ('CCDSEC' in key) or ('DATASEC' in key):
+                continue
+            if ('BSCALE' in key) or ('BZERO' in key):
+                continue
+            hdu.header[key] = he[key]
+        hdu.writeto(outname, overwrite=True)
