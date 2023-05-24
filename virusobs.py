@@ -457,8 +457,10 @@ class VIRUSObs:
             S = np.zeros((data.shape[0], 2))
             for channel in channels:
                 for cnt, science in enumerate(self.sciRaw_list):
-                    S[:, 0] = science.info['virus'].dra - science.info['virus'].adrra[k]
-                    S[:, 1] = science.info['virus'].ddec - science.info['virus'].adrdec[k]
+                    li = cnt * 448
+                    hi = (cnt + 1) * 448
+                    S[li:hi, 0] = science.info['virus'].dra - science.info['virus'].adrra[k]
+                    S[li:hi, 1] = science.info['virus'].ddec - science.info['virus'].adrdec[k]
             sel = np.isfinite(data[:, k])
             if np.any(sel):
                 grid_z = griddata(S[sel], data[sel, k],
