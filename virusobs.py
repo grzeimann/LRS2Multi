@@ -93,6 +93,8 @@ class VIRUSObs:
         # Subtract Sky
         ########################################################################
         self.get_astrometry(dither_index=dither_index)
+        self.get_delta_ra_dec()
+        self.get_ADR_RAdec()
     
     def get_ftf_correction(self, low_thresh=0.5):
         '''
@@ -336,7 +338,7 @@ class VIRUSObs:
                 science.info[channel].dra = dra
                 science.info[channel].ddec = ddec
                 
-    def get_ADR_RAdec(self, xoff, yoff, astrometry_object):
+    def get_ADR_RAdec(self):
         '''
         
     
