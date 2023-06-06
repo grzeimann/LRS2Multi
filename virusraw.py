@@ -283,17 +283,20 @@ class VIRUSRaw:
         image[:] -= self.info[ifuslot].masterbias
         
         # Get powerlaw
+        self.log.info('Getting Powerlaw for %s' % ifuslot)
         plaw = get_powerlaw(image, self.info[ifuslot].trace)
         self.info[ifuslot].image = image
         self.info[ifuslot].plaw = plaw
         image[:] -= self.info[ifuslot].plaw
         
         # Get spectra and error
+        self.log.info('Getting Spectra for %s' % ifuslot)
         spec = get_spectra(image, self.info[ifuslot].trace)
         specerr = get_spectra_error(E, self.info[ifuslot].trace)
         chi2 = get_spectra_chi2(self.info[ifuslot].masterflt, image, E, 
                                 self.info[ifuslot].trace)
         self.info[ifuslot].chi2 = chi2
+
         # Mark pixels effected by cosmics
         badpix = chi2 > 10.
         specerr[badpix] = np.nan
