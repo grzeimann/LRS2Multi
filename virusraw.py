@@ -70,7 +70,7 @@ class VIRUSRaw:
 
         # Rectified wavelength
         def_wave = np.linspace(3470., 5540., 1036)
-        amporder = ['RU', 'RL', 'LL', 'LU']
+        self.amporder = ['RU', 'RL', 'LL', 'LU']
         # ADR model
         wADR = [3500., 4000., 4500., 5000., 5500.]
         ADRx = [-0.74, -0.4, -0.08, 0.08, 0.20]
@@ -125,11 +125,11 @@ class VIRUSRaw:
         cnt = 0
         h5file = tables.open_file(hdf5file, mode='r')
         h5table = h5file.root.Cals
-        for ifuslot in ifuslots:
+        for ifuslot in self.ifuslots:
             self.info[ifuslot] = self.ChannelInfo(ifuslot, h5table,
-                                                  amp_list=amporder)
+                                                  amp_list=self.amporder)
             self.reduce_channel(filename, ifuslot, tarfolder=tarfolder, 
-                                amp_list=amporder)
+                                amp_list=self.amporder)
             self.info[ifuslot].filename = name % (date, observation_number,
                                                   expstr, ifuslot)
             self.info[ifuslot].date = date
