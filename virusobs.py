@@ -159,15 +159,14 @@ class VIRUSObs:
             print('No arc Exposures in arcRaw_list')
             return None
         self.sciRaw_list[0].log.info('Getting Wavelength Correction')
-        line_list = {}
-        line_list['virus'] = [3610.508, 4046.565, 4358.335, 4678.149, 4799.912,
+        line_list = [3610.508, 4046.565, 4358.335, 4678.149, 4799.912,
                       4916.068, 5085.822, 5460.750]
         for ifuslot in self.ifuslots:
             def_wave = self.arcRaw_list[0].info[ifuslot].def_wave
             arc_spectra = 0. * self.arcRaw_list[0].info[ifuslot].data
             for arc in self.arcRaw_list:
                 arc_spectra[:] += arc.info[ifuslot].data*1e17
-            lines = np.array(line_list[ifuslot])
+            lines = np.array(line_list)
             std = np.sqrt(biweight_midvariance(arc_spectra, ignore_nan=True))
             matches = np.ones((arc_spectra.shape[0], len(lines))) * np.nan
             for i, spec in enumerate(arc_spectra):
