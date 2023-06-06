@@ -115,7 +115,12 @@ class VIRUSObs:
             print('No Twi Exposures in twiRaw_list')
             return None
         self.sciRaw_list[0].log.info('Getting Fiber to Fiber Correction')
-        for ifuslot in self.ifuslots:
+        T = np.zeros((448 * len(self.ifuslots)))
+        E = T * 0.
+        W = T * 0.
+        for i, ifuslot in enumerate(self.ifuslots):
+            li = i * 448
+            hi = (i + 1) * 448
             twidata = 0 * self.twiRaw_list[0].info[ifuslot].data
             twidatae = 0 * self.twiRaw_list[0].info[ifuslot].datae
             wave = self.twiRaw_list[0].info[ifuslot].def_wave
@@ -123,28 +128,41 @@ class VIRUSObs:
                 twidata[:] += twi.info[ifuslot].data*1e17
                 twidatae[:] += (twi.info[ifuslot].data*1e17)**2
             twidatae = np.sqrt(twidatae)
-            ftf, mask = get_fiber_to_fiber(twidata, twidatae, wave)
-            medvals = np.nanmedian(ftf, axis=1)
-            medval = np.nanmedian(medvals)
-            mask = medvals < low_thresh * medval
+            
+            T[li:hi] = twidata
+            E[li:hi] = twidatae
+            W[li:hi] = wave
+    
+        ftf, mask = get_fiber_to_fiber(T, E, W)
+        medvals = np.nanmedian(ftf, axis=1)
+        medval = np.nanmedian(medvals)
+        mask = medvals < low_thresh * medval
+        y = medvals * 1.
+        medvals[mask] = np.nan
+        G = Gaussian1DKernel(3.)
+        model = convolve(y, G, boundary='wrap')
+        mask = medvals / model < low_thresh
+        for i, ifuslot in enumerate(self.ifuslots):
+            li = i * 448
+            hi = (i + 1) * 448
             if not self.LDLSRaw_list:
                 print('No LDLS Exposures in ldlsRaw_list')
             else:
                 y = []
                 for ldls in self.LDLSRaw_list:
-                    y.append(ldls.info[ifuslot].data / ftf)
+                    y.append(ldls.info[ifuslot].data / ftf[li:hi])
                 avg = np.nanmedian(y, axis=0)
-                ldlsftf, smask = get_fiber_to_fiber(avg, twidatae, wave)
+                ldlsftf, smask = get_fiber_to_fiber(avg, E[li:hi], wave[li:hi])
                 avg = avg / ldlsftf
                 avgspec = np.nanmedian(avg, axis=0)
                 div = avg / avgspec[np.newaxis, :]
-                ftf *= div
+                ftf[li:hi] *= div
             for sciRaw in self.sciRaw_list:
-                sciRaw.info[ifuslot].ftf = ftf
-                sciRaw.info[ifuslot].data /= ftf
-                sciRaw.info[ifuslot].datae /= ftf
-                sciRaw.info[ifuslot].data[mask] = np.nan
-                sciRaw.info[ifuslot].datae[mask] = np.nan
+                sciRaw.info[ifuslot].ftf = ftf[li:hi]
+                sciRaw.info[ifuslot].data /= ftf[li:hi]
+                sciRaw.info[ifuslot].datae /= ftf[li:hi]
+                sciRaw.info[ifuslot].data[mask[li:hi]] = np.nan
+                sciRaw.info[ifuslot].datae[mask[li:hi]] = np.nan
             
     def get_wave_correction(self):
         '''
