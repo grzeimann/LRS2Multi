@@ -126,9 +126,11 @@ class VIRUSRaw:
         h5file = tables.open_file(hdf5file, mode='r')
         h5table = h5file.root.Cals
         for ifuslot in self.ifuslots:
+            fname = filename.replace('%sLL' % ifuslots[0], 
+                                     '%s%s' % (ifuslot, 'LL'))
             self.info[ifuslot] = self.ChannelInfo(ifuslot, h5table,
                                                   amp_list=self.amporder)
-            self.reduce_channel(filename, ifuslot, tarfolder=tarfolder, 
+            self.reduce_channel(fname, ifuslot, tarfolder=tarfolder, 
                                 amp_list=self.amporder)
             self.info[ifuslot].filename = name % (date, observation_number,
                                                   expstr, ifuslot)
