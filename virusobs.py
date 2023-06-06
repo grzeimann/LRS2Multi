@@ -308,7 +308,7 @@ class VIRUSObs:
                 if dither_index is not None:
                     x += science.dither_pattern[dither_index[cnt], 0]
                     y += science.dither_pattern[dither_index[cnt], 1]
-                ra, dec = A.get_ifupos_ra_dec(science.ifuslot, x, y)
+                ra, dec = A.get_ifupos_ra_dec(science.info[ifuslot].ifuslot, x, y)
                 science.info[ifuslot].ra = ra
                 science.info[ifuslot].dec = dec
     
