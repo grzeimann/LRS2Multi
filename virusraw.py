@@ -137,6 +137,7 @@ class VIRUSRaw:
             self.info[ifuslot].exposure_number = exposure_number
             if cnt == 0:
                 area, transparency, iq, M = self.get_mirror_illumination_guider(ifuslot)
+                cnt += 1
             self.log.info('Transparency, Area, Exptime: %0.2f, %0.2f, %0.1f' %
                           (transparency, area / 51.4e4, self.info[ifuslot].exptime))
             self.info[ifuslot].area = area
@@ -263,16 +264,16 @@ class VIRUSRaw:
         # Basic reduction
         array_flt1, e1, header = base_reduction(filename1, tarfolder=tarfolder,
                                                 get_header=True)
-        self.log('Base reduction done for %s' % filename1)
+        self.log.info('Base reduction done for %s' % filename1)
         if header['EXPTIME'] < 0:
             header['EXPTIME'] = header['REXPTIME'] + 7
         self.info[ifuslot].exptime = header['EXPTIME']
         array_flt2, e2 = base_reduction(filename2, tarfolder=tarfolder)
-        self.log('Base reduction done for %s' % filename2)
+        self.log.info('Base reduction done for %s' % filename2)
         array_flt3, e3 = base_reduction(filename3, tarfolder=tarfolder)
-        self.log('Base reduction done for %s' % filename3)
+        self.log.info('Base reduction done for %s' % filename3)
         array_flt4, e4 = base_reduction(filename4, tarfolder=tarfolder)
-        self.log('Base reduction done for %s' % filename4)
+        self.log.info('Base reduction done for %s' % filename4)
 
         
         image = np.vstack([array_flt1, array_flt2, array_flt3, array_flt4])
