@@ -81,6 +81,8 @@ class VIRUSRaw:
         
         self.setup_logging()
         self.date = date
+        self.observation = observation_number
+        self.exposure_number = exposure_number
         tarfolder = op.join(basepath, date, 'virus', 
                                  'virus%07d.tar' % observation_number)
         if from_archive:
