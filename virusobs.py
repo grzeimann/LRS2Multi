@@ -66,6 +66,7 @@ class VIRUSObs:
         self.twiRaw_list = twiRaw_list
         self.LDLSRaw_list = LDLSRaw_list
         self.DarkRaw_list = DarkRaw_list
+        self.ifuslots = self.sciRaw_list[0].ifuslots
         ########################################################################
         # Correct wavelength default to the lamps taken that night
         ########################################################################
@@ -114,14 +115,13 @@ class VIRUSObs:
             print('No Twi Exposures in twiRaw_list')
             return None
         self.sciRaw_list[0].log.info('Getting Fiber to Fiber Correction')
-        channels = ['virus']
-        for channel in channels:
-            twidata = 0 * self.twiRaw_list[0].info[channel].data
-            twidatae = 0 * self.twiRaw_list[0].info[channel].datae
-            wave = self.twiRaw_list[0].info[channel].def_wave
+        for ifuslot in self.ifuslots:
+            twidata = 0 * self.twiRaw_list[0].info[ifuslot].data
+            twidatae = 0 * self.twiRaw_list[0].info[ifuslot].datae
+            wave = self.twiRaw_list[0].info[ifuslot].def_wave
             for twi in self.twiRaw_list:
-                twidata[:] += twi.info[channel].data*1e17
-                twidatae[:] += (twi.info[channel].data*1e17)**2
+                twidata[:] += twi.info[ifuslot].data*1e17
+                twidatae[:] += (twi.info[ifuslot].data*1e17)**2
             twidatae = np.sqrt(twidatae)
             ftf, mask = get_fiber_to_fiber(twidata, twidatae, wave)
             medvals = np.nanmedian(ftf, axis=1)
@@ -132,7 +132,7 @@ class VIRUSObs:
             else:
                 y = []
                 for ldls in self.LDLSRaw_list:
-                    y.append(ldls.info[channel].data / ftf)
+                    y.append(ldls.info[ifuslot].data / ftf)
                 avg = np.nanmedian(y, axis=0)
                 ldlsftf, smask = get_fiber_to_fiber(avg, twidatae, wave)
                 avg = avg / ldlsftf
@@ -140,11 +140,11 @@ class VIRUSObs:
                 div = avg / avgspec[np.newaxis, :]
                 ftf *= div
             for sciRaw in self.sciRaw_list:
-                sciRaw.info[channel].ftf = ftf
-                sciRaw.info[channel].data /= ftf
-                sciRaw.info[channel].datae /= ftf
-                sciRaw.info[channel].data[mask] = np.nan
-                sciRaw.info[channel].datae[mask] = np.nan
+                sciRaw.info[ifuslot].ftf = ftf
+                sciRaw.info[ifuslot].data /= ftf
+                sciRaw.info[ifuslot].datae /= ftf
+                sciRaw.info[ifuslot].data[mask] = np.nan
+                sciRaw.info[ifuslot].datae[mask] = np.nan
             
     def get_wave_correction(self):
         '''
@@ -162,13 +162,12 @@ class VIRUSObs:
         line_list = {}
         line_list['virus'] = [3610.508, 4046.565, 4358.335, 4678.149, 4799.912,
                       4916.068, 5085.822, 5460.750]
-        channels = ['virus']
-        for channel in channels:
-            def_wave = self.arcRaw_list[0].info[channel].def_wave
-            arc_spectra = 0. * self.arcRaw_list[0].info[channel].data
+        for ifuslot in self.ifuslots:
+            def_wave = self.arcRaw_list[0].info[ifuslot].def_wave
+            arc_spectra = 0. * self.arcRaw_list[0].info[ifuslot].data
             for arc in self.arcRaw_list:
-                arc_spectra[:] += arc.info[channel].data*1e17
-            lines = np.array(line_list[channel])
+                arc_spectra[:] += arc.info[ifuslot].data*1e17
+            lines = np.array(line_list[ifuslot])
             std = np.sqrt(biweight_midvariance(arc_spectra, ignore_nan=True))
             matches = np.ones((arc_spectra.shape[0], len(lines))) * np.nan
             for i, spec in enumerate(arc_spectra):
@@ -191,14 +190,14 @@ class VIRUSObs:
                 wave_correction[i] = np.polyval(np.polyfit(lines[sel], model[i][sel], 2), 
                                                 def_wave)
                 for science in self.sciRaw_list:
-                    science.info[channel].data[i] = np.interp(def_wave,
+                    science.info[ifuslot].data[i] = np.interp(def_wave,
                                                               def_wave-wave_correction[i],
-                                                              science.info[channel].data[i])
-                    science.info[channel].datae[i] = np.interp(def_wave,
+                                                              science.info[ifuslot].data[i])
+                    science.info[ifuslot].datae[i] = np.interp(def_wave,
                                                                def_wave-wave_correction[i],
-                                                               science.info[channel].datae[i])
+                                                               science.info[ifuslot].datae[i])
             for science in self.sciRaw_list:
-                science.info[channel].wave_correction = wave_correction
+                science.info[ifuslot].wave_correction = wave_correction
         return None
 
     def get_dark_correction(self, frame_list):
@@ -219,14 +218,13 @@ class VIRUSObs:
             print('No Dark Exposures in darkRaw_list')
             return None
         self.sciRaw_list[0].log.info('Subtracting Dark')
-        channels = ['virus']
-        for channel in channels:
+        for ifuslot in self.ifuslots:
             zp = []
             for v in self.DarkRaw_list:
-                zp.append(v.info[channel].data)
+                zp.append(v.info[ifuslot].data)
             avg = np.nanmedian(zp, axis=0)
             nchunks = 14
-            nfib, ncols = v.info['virus'].data.shape
+            nfib, ncols = v.info[ifuslot].data.shape
             Z = np.zeros((nfib, nchunks))
             xi = [np.mean(x) for x in np.array_split(np.arange(ncols), nchunks)]
             x = np.arange(ncols)
@@ -239,15 +237,15 @@ class VIRUSObs:
                 p0 = np.polyfit(xi, Z[ind], 4)
                 model = np.polyval(p0, x)
                 image[ind] = model
-            mult1 = (self.DarkRaw_list[0].info[channel].area *
-                     self.DarkRaw_list[0].info[channel].transparency *
-                     self.DarkRaw_list[0].info[channel].exptime)
+            mult1 = (self.DarkRaw_list[0].info[ifuslot].area *
+                     self.DarkRaw_list[0].info[ifuslot].transparency *
+                     self.DarkRaw_list[0].info[ifuslot].exptime)
             for science in frame_list:
-                mult2 = (science.info[channel].area *
-                         science.info[channel].transparency *
-                         science.info[channel].exptime)
-                science.info[channel].dark = image * mult1 / mult2
-                science.info[channel].data[:] -= science.info[channel].dark
+                mult2 = (science.info[ifuslot].area *
+                         science.info[ifuslot].transparency *
+                         science.info[ifuslot].exptime)
+                science.info[ifuslot].dark = image * mult1 / mult2
+                science.info[ifuslot].data[:] -= science.info[ifuslot].dark
 
     def get_sky_subtraction(self, sky=None, skyfibers=None):
         '''
@@ -266,15 +264,14 @@ class VIRUSObs:
 
         '''
         self.sciRaw_list[0].log.info('Subtracting Sky')
-        channels = ['virus']
-        for channel in channels:
+        for ifuslot in self.ifuslots:
             for science in self.sciRaw_list:
                 if sky is not None:
-                    science.info[channel].skysub = science.info[channel].data - sky[np.newaxis, :]
+                    science.info[ifuslot].skysub = science.info[ifuslot].data - sky[np.newaxis, :]
                     continue
-                medsky = np.nanmedian(science.info[channel].data, axis=0)
-                science.info[channel].sky = medsky
-                science.info[channel].skysub = science.info[channel].data - medsky[np.newaxis, :]
+                medsky = np.nanmedian(science.info[ifuslot].data, axis=0)
+                science.info[ifuslot].sky = medsky
+                science.info[ifuslot].skysub = science.info[ifuslot].data - medsky[np.newaxis, :]
                 
 
     def get_astrometry(self, dither_index=None,
@@ -295,27 +292,26 @@ class VIRUSObs:
     
         '''
         self.sciRaw_list[0].log.info('Getting Astrometry')
-        channels = ['virus']
-        for channel in channels:
+        for ifuslot in self.ifuslots:
             for cnt, science in enumerate(self.sciRaw_list):
                 xc, yc = (0., 0.)
-                s_str = (science.info[channel].header['QRA'] + " " +
-                         science.info[channel].header['QDEC'])
+                s_str = (science.info[ifuslot].header['QRA'] + " " +
+                         science.info[ifuslot].header['QDEC'])
                 L = s_str
-                science.info[channel].skycoord = SkyCoord(L, unit=(u.hourangle, u.deg))
-                A = Astrometry(science.info[channel].skycoord.ra.deg, 
-                               science.info[channel].skycoord.dec.deg, 
-                               science.info[channel].header['PARANGLE'],
+                science.info[ifuslot].skycoord = SkyCoord(L, unit=(u.hourangle, u.deg))
+                A = Astrometry(science.info[ifuslot].skycoord.ra.deg, 
+                               science.info[ifuslot].skycoord.dec.deg, 
+                               science.info[ifuslot].header['PARANGLE'],
                                xc, yc, fplane_file=fplane_file)
-                science.info[channel].astrometry = A
-                x = science.info[channel].x
-                y = science.info[channel].y
+                science.info[ifuslot].astrometry = A
+                x = science.info[ifuslot].x
+                y = science.info[ifuslot].y
                 if dither_index is not None:
                     x += science.dither_pattern[dither_index[cnt], 0]
                     y += science.dither_pattern[dither_index[cnt], 1]
                 ra, dec = A.get_ifupos_ra_dec(science.ifuslot, x, y)
-                science.info[channel].ra = ra
-                science.info[channel].dec = dec
+                science.info[ifuslot].ra = ra
+                science.info[ifuslot].dec = dec
     
     def get_delta_ra_dec(self):
         '''
@@ -326,17 +322,20 @@ class VIRUSObs:
         None.
 
         '''
-        channels = ['virus']
-        for channel in channels:
-            mra = np.mean(self.sciRaw_list[0].info[channel].ra)
-            mdec = np.mean(self.sciRaw_list[0].info[channel].dec)
+        mra = np.mean(np.hstack([science.info[ifuslot].ra 
+                                 for science in self.sciRaw_list 
+                                 for ifuslot in self.ifuslots]))
+        mdec = np.mean(np.hstack([science.info[ifuslot].dec 
+                                  for science in self.sciRaw_list 
+                                  for ifuslot in self.ifuslots]))
+        for ifuslot in self.ifuslots:
             for cnt, science in enumerate(self.sciRaw_list):
-                dra = (np.cos(np.deg2rad(mdec)) * (science.info[channel].ra - mra) * 3600.)
-                ddec = (science.info[channel].dec - mdec) * 3600
-                science.info[channel].ra_center = mra
-                science.info[channel].dec_center = mdec
-                science.info[channel].dra = dra
-                science.info[channel].ddec = ddec
+                dra = (np.cos(np.deg2rad(mdec)) * (science.info[ifuslot].ra - mra) * 3600.)
+                ddec = (science.info[ifuslot].dec - mdec) * 3600
+                science.info[ifuslot].ra_center = mra
+                science.info[ifuslot].dec_center = mdec
+                science.info[ifuslot].dra = dra
+                science.info[ifuslot].ddec = ddec
                 
     def get_ADR_RAdec(self):
         '''
@@ -359,17 +358,16 @@ class VIRUSObs:
             DESCRIPTION.
     
         '''
-        channels = ['virus']
-        for channel in channels:
+        for ifuslot in self.ifuslots:
             for cnt, science in enumerate(self.sciRaw_list):
                 xoff = science.adrx
                 yoff = science.adry
-                tRA, tDec = science.info[channel].astrometry.tp.wcs_pix2world(xoff, yoff, 1)
-                ADRra = ((tRA - science.info[channel].astrometry.ra0) * 3600. *
-                         np.cos(np.deg2rad(science.info[channel].astrometry.dec0)))
-                ADRdec = (tDec - science.info[channel].astrometry.dec0) * 3600.
-                science.info[channel].adrra = ADRra
-                science.info[channel].adrdec = ADRdec
+                tRA, tDec = science.info[ifuslot].astrometry.tp.wcs_pix2world(xoff, yoff, 1)
+                ADRra = ((tRA - science.info[ifuslot].astrometry.ra0) * 3600. *
+                         np.cos(np.deg2rad(science.info[ifuslot].astrometry.dec0)))
+                ADRdec = (tDec - science.info[ifuslot].astrometry.dec0) * 3600.
+                science.info[ifuslot].adrra = ADRra
+                science.info[ifuslot].adrdec = ADRdec
             
     def get_spectrum(self, ra, dec, radius=3, ring_radius=2):
         '''
@@ -392,24 +390,25 @@ class VIRUSObs:
             DESCRIPTION.
     
         '''
-        channels = ['virus']
         spec_list, back_list = ([], [])
         
-        for channel in channels:
+        for ifuslot in self.ifuslots:
             for cnt, science in enumerate(self.sciRaw_list):
-                dra = (np.cos(np.deg2rad(dec)) * (science.info[channel].ra - ra) * 3600.)
-                ddec = (science.info[channel].dec - dec) * 3600
+                dra = (np.cos(np.deg2rad(dec)) * (science.info[ifuslot].ra - ra) * 3600.)
+                ddec = (science.info[ifuslot].dec - dec) * 3600
                 sel = np.sqrt(dra**2 + ddec**2) < radius
                 backsel = (np.sqrt(dra**2 + ddec**2) > radius) * (np.sqrt(dra**2 + ddec**2) < radius+ring_radius)
-                for sp in science.info[channel].skysub[sel]:
+                for sp in science.info[ifuslot].skysub[sel]:
                     spec_list.append(sp)
-                for sp in science.info[channel].skysub[backsel]:
+                for sp in science.info[ifuslot].skysub[backsel]:
                     back_list.append(sp)
         self.fiber_aperture_list = spec_list
         self.fiber_back_list = back_list
-        self.extracted_spectrum = np.nansum(np.array(self.fiber_aperture_list) -
+        aperture_correction = (len(self.fiber_aperture_list) * np.pi * 0.75**2 /
+                              (np.pi * radius**2))
+        self.extracted_spectrum = (np.nansum(np.array(self.fiber_aperture_list) -
                                             np.nanmedian(self.fiber_back_list),
-                                            axis=0)
+                                            axis=0) / aperture_correction)
             
     def make_cube(self, scale=0.7, ran=[-50, 50, -50, 50]):
         '''
@@ -439,11 +438,10 @@ class VIRUSObs:
 
         '''
         data, error = ([], [])
-        channels = ['virus']
-        for channel in channels:
+        for ifuslot in self.ifuslots:
             for cnt, science in enumerate(self.sciRaw_list):
-                data.append(science.info[channel].skysub)
-                error.append(science.info[channel].datae)
+                data.append(science.info[ifuslot].skysub)
+                error.append(science.info[ifuslot].datae)
         data, error = [np.vstack(x) for x in [data, error]]
         a, b = data.shape
         N1 = int((ran[1] - ran[0]) / scale) + 1
@@ -455,12 +453,12 @@ class VIRUSObs:
         area = np.pi * 0.75**2
         for k in np.arange(b):
             S = np.zeros((data.shape[0], 2))
-            for channel in channels:
+            for ifuslot in self.ifuslots:
                 for cnt, science in enumerate(self.sciRaw_list):
                     li = cnt * 448
                     hi = (cnt + 1) * 448
-                    S[li:hi, 0] = science.info['virus'].dra - science.info['virus'].adrra[k]
-                    S[li:hi, 1] = science.info['virus'].ddec - science.info['virus'].adrdec[k]
+                    S[li:hi, 0] = science.info[ifuslot].dra - science.info[ifuslot].adrra[k]
+                    S[li:hi, 1] = science.info[ifuslot].ddec - science.info[ifuslot].adrdec[k]
             sel = np.isfinite(data[:, k])
             if np.any(sel):
                 grid_z = griddata(S[sel], data[sel, k],
@@ -495,12 +493,11 @@ class VIRUSObs:
             hdu header object to carry original header information
         '''
         wave = self.def_wave
-        channels = ['virus']
-        for channel in channels:
+        for ifuslot in self.ifuslots:
             for cnt, science in enumerate(self.sciRaw_list):
-                he = science.info[channel].header
-                racenter = science.info[channel].ra_center
-                deccenter = science.info[channel].dec_center
+                he = science.info[ifuslot].header
+                racenter = science.info[ifuslot].ra_center
+                deccenter = science.info[ifuslot].dec_center
         hdu = fits.PrimaryHDU(np.array(self.cube, dtype='float32'))
         hdu.header['CRVAL1'] = racenter
         hdu.header['CRVAL2'] = deccenter

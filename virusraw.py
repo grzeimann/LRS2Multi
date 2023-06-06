@@ -13,12 +13,17 @@ import warnings
 import glob
 from astropy.io import fits
 from astropy.table import Table
+from astrometry import Astrometry
+from astropy.coordinates import SkyCoord
+import astropy.units as u
 from fiber_utils import base_reduction, rectify, get_powerlaw
 from fiber_utils import get_spectra_error, get_spectra, get_spectra_chi2
 from datetime import datetime
 import tarfile
 import sys
 import tables
+
+
 warnings.filterwarnings("ignore")
 
 def get_script_path():
@@ -32,7 +37,7 @@ class VIRUSRaw:
     '''
     def __init__(self, date, observation_number, hdf5file, 
                  exposure_number=1,
-                 ifuslot='052', from_archive=False,
+                 ifuslots=['052'], from_archive=False,
                  basepath='/work/03946/hetdex/maverick'):
         '''
         
@@ -43,10 +48,12 @@ class VIRUSRaw:
             DESCRIPTION.
         observation_number : TYPE
             DESCRIPTION.
-        exposure_number : TYPE, optional
+        hdf5file : TYPE
+            DESCRIPTION.
+        exposure_number : float, optional
             DESCRIPTION. The default is 1.
-        side : TYPE, optional
-            DESCRIPTION. The default is None.
+        ifuslots : list, optional
+            DESCRIPTION. The default is ['052'].
         from_archive : TYPE, optional
             DESCRIPTION. The default is False.
         basepath : TYPE, optional
@@ -57,6 +64,7 @@ class VIRUSRaw:
         None.
 
         '''
+        
         # Default dither pattern for 3 exposures
         dither_pattern = np.array([[0., 0.], [1.215, -0.70], [1.215, 0.70]])
 
@@ -83,7 +91,7 @@ class VIRUSRaw:
         path = op.join(basepath, date, 'virus', 'lrs2%07d' % observation_number,
                        'exp%02d' % exposure_number)
         expstr = 'exp%02d' % exposure_number
-        ampcase = '%sLL' % ifuslot
+        ampcase = '%sLL' % ifuslots[0]
         if op.exists(tarfolder):
             self.log.info('Found tarfile %s' % tarfolder)
             T = tarfile.open(tarfolder, 'r')
@@ -106,51 +114,66 @@ class VIRUSRaw:
             filename = name
         else:
             tarfolder = None
-            filenames = glob.glob(op.join(path, '*%sLL*.fits' % ifuslot))
+            filenames = glob.glob(op.join(path, '*%sLL*.fits' % ifuslots[0]))
             if len(filenames) < 1:
                 self.log.error('No files found here %s' % path)
                 sys.exit('Cowardly exiting; please check input')
             filename = filenames[0]
-        self.ifuslot = ifuslot
+        self.ifuslots = ifuslots
         self.info = {}
         name = 'multi_%s_%07d_%s_%s.fits'
         cnt = 0
-        channel = 'virus'
-        self.info[channel] = self.ChannelInfo(ifuslot, hdf5file,
-                                              amp_list=amporder)
-        self.reduce_channel(filename, ifuslot, 
-                            tarfolder=tarfolder, amp_list=amporder)
-        self.info[channel].filename = name % (date, observation_number,
-                                              expstr, channel)
-        self.info[channel].date = date
-        self.info[channel].observation_number = observation_number
-        self.info[channel].exposure_number = exposure_number
-        if cnt == 0:
-            area, transparency, iq, M = self.get_mirror_illumination_guider(channel)
-        self.log.info('Transparency, Area, Exptime: %0.2f, %0.2f, %0.1f' %
-                      (transparency, area / 51.4e4, self.info[channel].exptime))
-        self.info[channel].area = area
-        self.info[channel].transparency = transparency
-        self.info[channel].iq = iq
-        self.info[channel].guider_info = M
-        self.info[channel].data[:] *= 51.4e4 / area / transparency 
-        self.info[channel].data[:] /= self.info[channel].response[np.newaxis, :] 
-        self.info[channel].datae[:] *= 51.4e4 / area / transparency
-        self.info[channel].datae[:] /= self.info[channel].response[np.newaxis, :]
-        self.info[channel].header['MILLUM'] = area
-        self.info[channel].header['THROUGHP'] = transparency
+        h5file = tables.open_file(hdf5file, mode='r')
+        h5table = h5file.root.Cals
+        for ifuslot in ifuslots:
+            self.info[ifuslot] = self.ChannelInfo(ifuslot, h5table,
+                                                  amp_list=amporder)
+            self.reduce_channel(filename, ifuslot, tarfolder=tarfolder, 
+                                amp_list=amporder)
+            self.info[ifuslot].filename = name % (date, observation_number,
+                                                  expstr, ifuslot)
+            self.info[ifuslot].date = date
+            self.info[ifuslot].observation_number = observation_number
+            self.info[ifuslot].exposure_number = exposure_number
+            if cnt == 0:
+                area, transparency, iq, M = self.get_mirror_illumination_guider(ifuslot)
+            self.log.info('Transparency, Area, Exptime: %0.2f, %0.2f, %0.1f' %
+                          (transparency, area / 51.4e4, self.info[ifuslot].exptime))
+            self.info[ifuslot].area = area
+            self.info[ifuslot].transparency = transparency
+            self.info[ifuslot].iq = iq
+            self.info[ifuslot].guider_info = M
+            self.info[ifuslot].data[:] *= 51.4e4 / area / transparency 
+            self.info[ifuslot].data[:] /= self.info[ifuslot].response[np.newaxis, :] 
+            self.info[ifuslot].datae[:] *= 51.4e4 / area / transparency
+            self.info[ifuslot].datae[:] /= self.info[ifuslot].response[np.newaxis, :]
+            self.info[ifuslot].header['MILLUM'] = area
+            self.info[ifuslot].header['THROUGHP'] = transparency
     
     class ChannelInfo:
-        
         # Create channel info
-        def __init__(self, ifuslot, hdf5file, 
+        def __init__(self, ifuslot, h5table, 
                      amp_list=['RU', 'RL', 'LL', 'LU']):
+            '''
+            
+
+            Parameters
+            ----------
+            ifuslot : TYPE
+                DESCRIPTION.
+            h5table : TYPE
+                DESCRIPTION.
+            amp_list : TYPE, optional
+                DESCRIPTION. The default is ['RU', 'RL', 'LL', 'LU'].
+
+            Returns
+            -------
+            None.
+
+            '''
             # get h5 file and info
-            h5file = tables.open_file(hdf5file, mode='r')
-            h5table = h5file.root.Cals
             ifuslots = ['%03d' % i for i in h5table.cols.ifuslot[:]]
             amps = [x.decode("utf-8") for x in h5table.cols.amp[:]]
-            
             inds = []
             for amp in amp_list:
                 cnt = 0
@@ -205,7 +228,7 @@ class VIRUSRaw:
         self.log = log
         self.log.propagate = False
 
-    def reduce_channel(self, filename, ifuslot, channel='virus',
+    def reduce_channel(self, filename, ifuslot,
                        tarfolder=None,
                        amp_list=['RU', 'RL', 'LL', 'LU']):
         '''
@@ -240,29 +263,34 @@ class VIRUSRaw:
         # Basic reduction
         array_flt1, e1, header = base_reduction(filename1, tarfolder=tarfolder,
                                                 get_header=True)
+        self.log('Base reduction done for %s' % filename1)
         if header['EXPTIME'] < 0:
             header['EXPTIME'] = header['REXPTIME'] + 7
-        self.info[channel].exptime = header['EXPTIME']
+        self.info[ifuslot].exptime = header['EXPTIME']
         array_flt2, e2 = base_reduction(filename2, tarfolder=tarfolder)
+        self.log('Base reduction done for %s' % filename2)
         array_flt3, e3 = base_reduction(filename3, tarfolder=tarfolder)
+        self.log('Base reduction done for %s' % filename3)
         array_flt4, e4 = base_reduction(filename4, tarfolder=tarfolder)
+        self.log('Base reduction done for %s' % filename4)
 
+        
         image = np.vstack([array_flt1, array_flt2, array_flt3, array_flt4])
         E = np.vstack([e1, e2, e3, e4])
-        image[:] -= self.info[channel].masterbias
+        image[:] -= self.info[ifuslot].masterbias
         
         # Get powerlaw
-        plaw = get_powerlaw(image, self.info[channel].trace)
-        self.info[channel].image = image
-        self.info[channel].plaw = plaw
-        image[:] -= self.info[channel].plaw
+        plaw = get_powerlaw(image, self.info[ifuslot].trace)
+        self.info[ifuslot].image = image
+        self.info[ifuslot].plaw = plaw
+        image[:] -= self.info[ifuslot].plaw
         
         # Get spectra and error
-        spec = get_spectra(image, self.info[channel].trace)
-        specerr = get_spectra_error(E, self.info[channel].trace)
-        chi2 = get_spectra_chi2(self.info[channel].masterflt, image, E, 
-                                self.info[channel].trace)
-        self.info[channel].chi2 = chi2
+        spec = get_spectra(image, self.info[ifuslot].trace)
+        specerr = get_spectra_error(E, self.info[ifuslot].trace)
+        chi2 = get_spectra_chi2(self.info[ifuslot].masterflt, image, E, 
+                                self.info[ifuslot].trace)
+        self.info[ifuslot].chi2 = chi2
         # Mark pixels effected by cosmics
         badpix = chi2 > 10.
         specerr[badpix] = np.nan
@@ -270,24 +298,24 @@ class VIRUSRaw:
         
         # Rectify spectra
         specrect, errrect = rectify(spec, specerr, 
-                                    self.info[channel].wavelength,
-                                    self.info[channel].def_wave)
-        factor = (6.626e-27 * (3e18 / self.info[channel].def_wave) /
+                                    self.info[ifuslot].wavelength,
+                                    self.info[ifuslot].def_wave)
+        factor = (6.626e-27 * (3e18 / self.info[ifuslot].def_wave) /
                   header['EXPTIME'] / 51.4e4)
         specrect[:] *= factor
         errrect[:] *= factor
-        self.info[channel].orig = spec
-        self.info[channel].data = specrect
-        self.info[channel].datae = errrect
-        self.info[channel].header = header
-        self.info[channel].channel = channel
-        self.info[channel].objname = header['OBJECT']
-        self.info[channel].spec_ext = np.array([self.info[channel].def_wave, 
-                                                self.info[channel].def_wave*0.,
-                                                self.info[channel].def_wave*0.,
-                                                self.info[channel].def_wave*0.,
-                                                self.info[channel].def_wave*0.,
-                                                self.info[channel].response])
+        self.info[ifuslot].orig = spec
+        self.info[ifuslot].data = specrect
+        self.info[ifuslot].datae = errrect
+        self.info[ifuslot].header = header
+        self.info[ifuslot].ifuslot = ifuslot
+        self.info[ifuslot].objname = header['OBJECT']
+        self.info[ifuslot].spec_ext = np.array([self.info[ifuslot].def_wave, 
+                                                self.info[ifuslot].def_wave*0.,
+                                                self.info[ifuslot].def_wave*0.,
+                                                self.info[ifuslot].def_wave*0.,
+                                                self.info[ifuslot].def_wave*0.,
+                                                self.info[ifuslot].response])
         
     def get_mirror_illumination_throughput(self, fn=None, default=51.4e4, default_t=1.,
                                            default_iq=1.8):
@@ -315,14 +343,14 @@ class VIRUSRaw:
         return area, transpar, iq
 
 
-    def get_mirror_illumination_guider(self, channel, default=51.4e4, 
+    def get_mirror_illumination_guider(self, ifuslot, default=51.4e4, 
                                        default_t=1., default_iq=1.8,
                                        path='/work/03946/hetdex/maverick'):
         try:
             M = []
             path = op.join(path, self.date)
-            DT = self.info[channel].header['DATE']
-            exptime = self.info[channel].header['EXPTIME']
+            DT = self.info[ifuslot].header['DATE']
+            exptime = self.info[ifuslot].header['EXPTIME']
             y, m, d, h, mi, s = [int(x) for x in [DT[:4], DT[5:7], DT[8:10], DT[11:13],
                                  DT[14:16], DT[17:19]]]
             d0 = datetime(y, m, d, h, mi, s)
