@@ -139,9 +139,10 @@ class VIRUSRaw:
             self.info[ifuslot].exposure_number = exposure_number
             if cnt == 0:
                 area, transparency, iq, M = self.get_mirror_illumination_guider(ifuslot)
+                self.log.info('Transparency, Area, Exptime: %0.2f, %0.2f, %0.1f' %
+                              (transparency, area / 51.4e4, self.info[ifuslot].exptime))
                 cnt += 1
-            self.log.info('Transparency, Area, Exptime: %0.2f, %0.2f, %0.1f' %
-                          (transparency, area / 51.4e4, self.info[ifuslot].exptime))
+
             self.info[ifuslot].area = area
             self.info[ifuslot].transparency = transparency
             self.info[ifuslot].iq = iq
