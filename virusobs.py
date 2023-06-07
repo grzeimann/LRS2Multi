@@ -133,13 +133,7 @@ class VIRUSObs:
     
         ftf, mask = get_fiber_to_fiber(T, E, wave)
         medvals = np.nanmedian(ftf, axis=1)
-        medval = np.nanmedian(medvals)
-        mask = medvals < low_thresh * medval
-        y = medvals * 1.
-        medvals[mask] = np.nan
-        G = Gaussian1DKernel(3.)
-        model = convolve(y, G, boundary='wrap')
-        mask = medvals / model < low_thresh
+        mask = medvals < low_thresh
         for i, ifuslot in enumerate(self.ifuslots):
             li = i * 448
             hi = (i + 1) * 448
