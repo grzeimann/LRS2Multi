@@ -115,7 +115,7 @@ class VIRUSObs:
             print('No Twi Exposures in twiRaw_list')
             return None
         self.sciRaw_list[0].log.info('Getting Fiber to Fiber Correction')
-        T = np.zeros((448 * len(self.ifuslots)))
+        T = np.zeros((448 * len(self.ifuslots), 1036))
         E = T * 0.
         W = T * 0.
         for i, ifuslot in enumerate(self.ifuslots):
