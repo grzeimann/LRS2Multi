@@ -117,7 +117,6 @@ class VIRUSObs:
         self.sciRaw_list[0].log.info('Getting Fiber to Fiber Correction')
         T = np.zeros((448 * len(self.ifuslots), 1036))
         E = T * 0.
-        W = T * 0.
         for i, ifuslot in enumerate(self.ifuslots):
             li = i * 448
             hi = (i + 1) * 448
@@ -131,9 +130,8 @@ class VIRUSObs:
             
             T[li:hi] = twidata
             E[li:hi] = twidatae
-            W[li:hi] = wave
     
-        ftf, mask = get_fiber_to_fiber(T, E, W)
+        ftf, mask = get_fiber_to_fiber(T, E, wave)
         medvals = np.nanmedian(ftf, axis=1)
         medval = np.nanmedian(medvals)
         mask = medvals < low_thresh * medval
@@ -152,7 +150,7 @@ class VIRUSObs:
                 for ldls in self.LDLSRaw_list:
                     y.append(ldls.info[ifuslot].data / ftf[li:hi])
                 avg = np.nanmedian(y, axis=0)
-                ldlsftf, smask = get_fiber_to_fiber(avg, E[li:hi], wave[li:hi])
+                ldlsftf, smask = get_fiber_to_fiber(avg, E[li:hi], wave)
                 avg = avg / ldlsftf
                 avgspec = np.nanmedian(avg, axis=0)
                 div = avg / avgspec[np.newaxis, :]
