@@ -274,7 +274,7 @@ class VIRUSRaw:
             hi = (i + 1) * 1032
             badcolumn = bad[li:hi].sum(axis=0) > badcolumnthresh
             bad[li:hi][:, badcolumn] = True
-        self.info[ifuslot].badpixels
+        self.info[ifuslot].badpixels = bad
 
     def reduce_channel(self, filename, ifuslot,
                        tarfolder=None,
