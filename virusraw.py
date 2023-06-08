@@ -22,6 +22,8 @@ from datetime import datetime
 import tarfile
 import sys
 import tables
+from scipy.signal import medfilt
+
 
 
 warnings.filterwarnings("ignore")
@@ -132,6 +134,7 @@ class VIRUSRaw:
                                      '%s%s' % (ifuslot, 'LL'))
             self.info[ifuslot] = self.ChannelInfo(ifuslot, h5table,
                                                   amp_list=self.amporder)
+            self.mask_from_ldls(ifuslot)
             self.reduce_channel(fname, ifuslot, tarfolder=tarfolder, 
                                 amp_list=self.amporder)
             self.info[ifuslot].filename = name % (date, observation_number,
@@ -233,6 +236,45 @@ class VIRUSRaw:
             log.addHandler(handler)
         self.log = log
         self.log.propagate = False
+        
+    def mask_from_ldls(self, ifuslot, niter=3, filter_length=11,
+                       sigma=5, badcolumnthresh=300):
+        '''
+        
+
+        Parameters
+        ----------
+        niter : TYPE, optional
+            DESCRIPTION. The default is 3.
+        filter_length : TYPE, optional
+            DESCRIPTION. The default is 11.
+        sigma : TYPE, optional
+            DESCRIPTION. The default is 5.
+        badcolumnthresh : TYPE, optional
+            DESCRIPTION. The default is 300.
+
+        Returns
+        -------
+        None.
+
+        '''
+        image = self.info[ifuslot].masterflt
+        bad = np.zeros(image.shape, dtype=bool)
+        
+        for ind in np.arange(image.shape[0]):
+            y = image[ind] * 1.
+            for i in np.arange(niter):
+                m = medfilt(y, filter_length)
+                dev = (image[ind] - m) / np.sqrt(np.where(m<25, 25, m))
+                flag = np.abs(dev) > sigma
+                y[flag] = m[flag]
+            bad[ind] = flag
+        for i in np.arange(4):
+            li = i * 1032
+            hi = (i + 1) * 1032
+            badcolumn = bad[li:hi].sum(axis=0) > badcolumnthresh
+            bad[li:hi][:, badcolumn] = True
+        self.info[ifuslot].badpixels
 
     def reduce_channel(self, filename, ifuslot,
                        tarfolder=None,
@@ -292,6 +334,7 @@ class VIRUSRaw:
         self.info[ifuslot].plaw = plaw
         image[:] -= self.info[ifuslot].plaw
         
+        image[self.info[ifuslot].badpixels] = np.nan
         # Get spectra and error
         self.log.info('Getting Spectra for %s' % ifuslot)
         spec = get_spectra(image, self.info[ifuslot].trace)
