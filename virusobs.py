@@ -22,6 +22,7 @@ from astrometry import Astrometry
 from astropy.coordinates import SkyCoord
 from astropy.convolution import convolve, Gaussian1DKernel
 from astropy.stats import biweight_midvariance
+from astropy.stats import biweight_location as biweight
 import astropy.units as u
 from fiber_utils import get_fiber_to_fiber, find_peaks
 from scipy.interpolate import griddata
@@ -96,7 +97,8 @@ class VIRUSObs:
         self.get_astrometry(dither_index=dither_index)
         self.get_delta_ra_dec()
         self.get_ADR_RAdec()
-    
+        
+            
     def get_ftf_correction(self, low_thresh=0.5):
         '''
         
@@ -256,7 +258,7 @@ class VIRUSObs:
                 science.info[ifuslot].dark = image * mult1 / mult2
                 science.info[ifuslot].data[:] -= science.info[ifuslot].dark
 
-    def get_sky_subtraction(self, sky=None, skyfibers=None):
+    def get_sky_subtraction(self, skylist=None, skyfibers=None):
         '''
         
 
@@ -273,15 +275,24 @@ class VIRUSObs:
 
         '''
         self.sciRaw_list[0].log.info('Subtracting Sky')
-        for ifuslot in self.ifuslots:
+        if skylist is None:
             for science in self.sciRaw_list:
-                if sky is not None:
+                fibers = np.zeros((448*len(self.ifuslots), 1036))
+                for i, ifuslot in enumerate(self.ifuslots):
+                    li = i * 448
+                    hi = (i + 1) * 448
+                    fibers[li:hi] = science.info[ifuslot].data
+                medsky = biweight(fibers, axis=0, ignore_nan=True)
+                for i, ifuslot in enumerate(self.ifuslots):
+                    science.info[ifuslot].sky = medsky
+                    science.info[ifuslot].skysub = science.info[ifuslot].data - medsky[np.newaxis, :]
+        else:
+            for sky, science in zip(skylist, self.sciRaw_list):
+                for i, ifuslot in enumerate(self.ifuslots):
+                    science.info[ifuslot].sky = sky
                     science.info[ifuslot].skysub = science.info[ifuslot].data - sky[np.newaxis, :]
-                    continue
-                medsky = np.nanmedian(science.info[ifuslot].data, axis=0)
-                science.info[ifuslot].sky = medsky
-                science.info[ifuslot].skysub = science.info[ifuslot].data - medsky[np.newaxis, :]
-                
+
+        
 
     def get_astrometry(self, dither_index=None,
                        fplane_file='/work/03730/gregz/maverick/fplaneall.txt'):
