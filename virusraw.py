@@ -132,9 +132,12 @@ class VIRUSRaw:
         for ifuslot in self.ifuslots:
             fname = filename.replace('%sLL' % ifuslots[0], 
                                      '%s%s' % (ifuslot, 'LL'))
+            self.log.info('Loading calibration information')
             self.info[ifuslot] = self.ChannelInfo(ifuslot, h5table,
                                                   amp_list=self.amporder)
+            self.log.info('Masking pixels')
             self.mask_from_ldls(ifuslot)
+            self.log.info('Reducing ifuslot')
             self.reduce_channel(fname, ifuslot, tarfolder=tarfolder, 
                                 amp_list=self.amporder)
             self.info[ifuslot].filename = name % (date, observation_number,
