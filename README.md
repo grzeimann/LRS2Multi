@@ -1,7 +1,7 @@
 # LRS2Multi
 
 ## Setup for TACC users
-To set up LRS2Multi on TACC you need the following four commands to run "successfully."
+To set up LRS2Multi on TACC you need the following commands to run "successfully."
 ```
 ssh username@stampede2.tacc.utexas.edu
 cd $HOME
