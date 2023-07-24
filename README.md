@@ -16,7 +16,15 @@ git clone https://github.com/grzeimann/LRS2Multi.git
 ```
 Then, go to the visualization portal in a browser: https://vis.tacc.utexas.edu/jobs/
 
-click on "Utilities" at the bottom and hit the "Use Python3" tab.  Then go back to the jobs page and,
+You can sign in and proceed to the utilities page by clinking the tab at the bottom or visiting: https://vis.tacc.utexas.edu/jobs/utils/
+
+<p align="center">
+  <img src="TACC_VIZ_utilities.png" width="650"/>
+</p>
+
+On the Utilities page, it the three bottom buttons to link Python3 and your directories for your work.
+
+Then go back to the jobs page which should look like this:
 
 <p align="center">
   <img src="TACC_VIZ_portal.png" width="650"/>
