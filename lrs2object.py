@@ -930,7 +930,8 @@ class LRS2Object:
                        obj_to_write.uncertainty.array,
                        telcor], 
                        names=names)
-        T.write(outname.replace('fits', 'dat'), format='ascii.fixed_width_two_line')
+        T.write(outname.replace('fits', 'dat'), 
+                format='ascii.fixed_width_two_line', overwrite=True)
         f1 = fits.PrimaryHDU(A)
         he = L.header
         for key in he.keys():
