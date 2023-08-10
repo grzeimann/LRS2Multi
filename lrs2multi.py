@@ -355,6 +355,7 @@ class LRS2Multi:
                         y_mean=y0)
         d = np.sqrt((self.x-x0)**2 + (self.y-y0)**2)
         dsel = (d < radius) * (np.isfinite(Y))
+        print(dsel.sum(), x0, y0)
         fitter = TRFLSQFitter()
         fit = fitter(GM, self.x[dsel], self.y[dsel], Y[dsel])
         d = np.sqrt((fit.x_mean.value-x0)**2 + (fit.y_mean.value-y0)**2)
