@@ -23,7 +23,7 @@ from astropy.modeling.models import Gaussian2D, Polynomial2D, Polynomial1D
 from astropy.convolution import convolve, Gaussian1DKernel, Gaussian2DKernel
 from astropy.convolution import interpolate_replace_nans
 
-from astropy.modeling.fitting import LevMarLSQFitter, TRFLSQFitter
+from astropy.modeling.fitting import LevMarLSQFitter, TRFLSQFitter, LMLSQFitter
 from scipy.interpolate import interp1d, griddata
 from scipy.signal import medfilt2d
 from sklearn.decomposition import PCA
@@ -356,7 +356,7 @@ class LRS2Multi:
         d = np.sqrt((self.x-x0)**2 + (self.y-y0)**2)
         dsel = (d < radius) * (np.isfinite(Y))
         print(GM)
-        fitter = LevMarLSQFitter()
+        fitter = LMLSQFitter()
         fit = fitter(GM, self.x[dsel], self.y[dsel], Y[dsel])
         d = np.sqrt((fit.x_mean.value-x0)**2 + (fit.y_mean.value-y0)**2)
         if d < 1.5:
