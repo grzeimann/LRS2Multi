@@ -351,6 +351,7 @@ class LRS2Multi:
         # Get initial model
         x0, y0 = (self.x[np.nanargmax(Y)], 
                   self.y[np.nanargmax(Y)])
+        Y = Y / np.nansum(Y) * 20.
         GM = Gaussian2D(amplitude=np.nanmax(Y)*1e17, x_mean=x0, 
                         y_mean=y0)
         GM.x_mean.bounds = (x0 - 1., x0 + 1.)
