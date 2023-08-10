@@ -356,7 +356,7 @@ class LRS2Multi:
         d = np.sqrt((self.x-x0)**2 + (self.y-y0)**2)
         dsel = (d < radius) * (np.isfinite(Y))
         print(GM)
-        fitter = TRFLSQFitter()
+        fitter = LevMarLSQFitter()
         fit = fitter(GM, self.x[dsel], self.y[dsel], Y[dsel])
         d = np.sqrt((fit.x_mean.value-x0)**2 + (fit.y_mean.value-y0)**2)
         if d < 1.5:
