@@ -3,15 +3,15 @@
 ## Setup for TACC users
 To set up LRS2Multi on TACC you need the following commands to run "successfully."
 ```
-ssh username@stampede2.tacc.utexas.edu
+ssh username@ls6.tacc.utexas.edu
 cd $HOME
-ln -s $WORK work-stampede2
+ln -s $WORK work-ls6
 module load python3
 pip3 install astropy --user
 pip3 install seaborn --user
 pip3 install specutils --user
 pip3 install scikit-learn --user
-cd /work/NUMBER/NAME/stampede2
+cd /work/NUMBER/NAME/ls6
 git clone https://github.com/grzeimann/LRS2Multi.git
 ```
 Then, go to the visualization portal in a browser: https://vis.tacc.utexas.edu/jobs/
