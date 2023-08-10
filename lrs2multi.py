@@ -353,10 +353,12 @@ class LRS2Multi:
                   self.y[np.nanargmax(Y)])
         GM = Gaussian2D(amplitude=np.nanmax(Y)*1e17, x_mean=x0, 
                         y_mean=y0)
+        G.x_mean.bounds = (x0 - 1., x0 + 1.)
+        G.y_mean.bounds = (y0 - 1., y0 + 1.)
         d = np.sqrt((self.x-x0)**2 + (self.y-y0)**2)
         dsel = (d < radius) * (np.isfinite(Y))
         print(GM)
-        fitter = LMLSQFitter()
+        fitter = LevMarLSQFitter()
         fit = fitter(GM, self.x[dsel], self.y[dsel], Y[dsel])
         d = np.sqrt((fit.x_mean.value-x0)**2 + (fit.y_mean.value-y0)**2)
         if d < 1.5:
