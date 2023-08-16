@@ -161,6 +161,7 @@ class VIRUSRaw:
             self.info[ifuslot].datae[:] /= self.info[ifuslot].response[np.newaxis, :]
             self.info[ifuslot].header['MILLUM'] = area
             self.info[ifuslot].header['THROUGHP'] = transparency
+        h5file.close()
     
     class ChannelInfo:
         # Create channel info
