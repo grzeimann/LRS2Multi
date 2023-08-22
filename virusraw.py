@@ -380,7 +380,7 @@ class VIRUSRaw:
             F = fits.open(fn)
             names = ['RHO_STRT', 'THE_STRT', 'PHI_STRT', 'X_STRT', 'Y_STRT']
             r, t, p, x, y = [F[0].header[name] for name in names]
-            mirror_illum = float(os.popen('/home1/00156/drory/illum_lib/hetillum -p'
+            mirror_illum = float(os.popen('/work/03730/gregz/maverick/illum_lib/hetillum -p'
                                  ' -x "[%0.4f,%0.4f,%0.4f]" "[%0.4f,%0.4f]" 256' %
                                           (x, y, p, 0.042, 0.014)).read().split('\n')[0])
             area = mirror_illum * default
