@@ -360,6 +360,7 @@ class LRS2Multi:
         dsel = (d < radius) * (np.isfinite(Y))
         fitter = LevMarLSQFitter()
         fit = fitter(GM, self.x[dsel], self.y[dsel], Y[dsel])
+        self.model = fit
         d = np.sqrt((fit.x_mean.value-x0)**2 + (fit.y_mean.value-y0)**2)
         if d < 1.5:
             xc, yc = (fit.x_mean.value, fit.y_mean.value)
