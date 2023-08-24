@@ -654,8 +654,8 @@ class LRS2Multi:
                 spectrum[i] = (np.nansum(W[rsel] * self.skysub[rsel, i]) /
                                   np.nansum(W[rsel]**2))
                 spectrum_error[i] = (np.sqrt(np.nansum((
-                                     self.error[rsel, i])**2 * W[rsel])) / 
-                                        np.nansum(W[rsel]**2))
+                                     self.error[rsel, i])**2 * W[rsel]) / 
+                                        np.nansum(W[rsel]**2)))
                 skyspectrum[i] = (np.nansum(W[rsel] * self.sky[rsel, i]) /
                                   np.nansum(W[rsel]**2))
                 spectrum[i] /= cor[i]
