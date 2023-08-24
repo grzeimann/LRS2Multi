@@ -441,6 +441,8 @@ class LRS2Object:
             for L in self.sides[key]:
                 if ((L.channel == self.blue_detect_channel) or 
                     (L.channel==self.red_detect_channel)):
+                    if not use_aperture:
+                        model = L.model
                     L.extract_spectrum(xc=xc, yc=yc, detwave=detwave, 
                                        wave_window=wave_window, 
                                        use_aperture=use_aperture, 
@@ -454,6 +456,8 @@ class LRS2Object:
                         j = 1
                     else:
                         j = 0
+                    if not use_aperture:
+                        model = self.sides[key][j].model
                     L.extract_spectrum(xc=self.sides[key][j].centroid_x, 
                                        yc=self.sides[key][j].centroid_y, 
                                        detwave=detwave, 
