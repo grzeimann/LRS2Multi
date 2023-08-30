@@ -962,7 +962,7 @@ class LRS2Object:
             f1.header['ROW%i' % (i+1)] = name
         f1.writeto(outname, overwrite=True)
         
-    def write_cube(self, outname=None):
+    def write_cube(self, outname=None, error=False):
         '''
         Write data cube to fits file
         
@@ -974,7 +974,10 @@ class LRS2Object:
         keys = list(self.sides.keys())
         L = self.sides[keys[-1]][0]
         wave = self.spec3D.spectral_axis.value
-        data = np.moveaxis(self.spec3D.flux.value, -1, 0)
+        if error:
+            data = np.moveaxis(self.spec3D.uncertainty.array, -1, 0)
+        else:
+            data = np.moveaxis(self.spec3D.flux.value, -1, 0)
         hdu = fits.PrimaryHDU(np.array(data, dtype='float32'))
         hdu.header['CRVAL1'] = L.skycoord.ra.deg
         hdu.header['CRVAL2'] = L.skycoord.dec.deg
