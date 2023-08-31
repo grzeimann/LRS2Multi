@@ -92,7 +92,7 @@ fit_waves = [np.abs(def_wave - line) <=40. for line in line_list]
 thresh = 500.
 
 CdA_list = []
-for arc in CdA_obs:
+for arc in CdA_obs + Hg_obs:
     date = arc[:8]
     obs = int(arc[8:15])
     exp = int(arc[15:])
