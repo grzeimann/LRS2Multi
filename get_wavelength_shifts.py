@@ -105,6 +105,7 @@ for arc in CdA_obs:
         for fiber in np.arange(current_observation.shape[0]):
             FFT = phase_cross_correlation(current_observation[fiber, :][np.newaxis, :],
                                           monthly_average[fiber, :][np.newaxis, :], 
-                                          normalization=None, upsample_factor=100)
+                                          normalization=None, upsample_factor=100,
+                                          overlap_ratio=0.95)
             shifts[fiber] = FFT[0][1]
         print(shifts)
