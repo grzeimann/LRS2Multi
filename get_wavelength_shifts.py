@@ -89,7 +89,7 @@ line_list = [3610.508, 4046.565, 4358.335, 4678.149, 4799.912,
                       4916.068, 5085.822, 5460.750]
 
 fit_waves = [np.abs(def_wave - line) <=40. for line in line_list]
-thresh = 500.
+thresh = 200.
 
 CdA_list = []
 for arc in CdA_obs + Hg_obs:
