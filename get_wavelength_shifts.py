@@ -104,7 +104,7 @@ for arc in CdA_obs:
         current_observation[np.isnan(current_observation)] = 0.0
         shifts = np.ones((current_observation.shape[0], len(line_list))) * np.nan
         for fiber in np.arange(current_observation.shape[0]):
-            fit_waves = [np.abs(virus.info[ifuslot].wavelength[fiber] - line) <=40. for line in line_list]
+            fit_waves = [np.abs(virus.info[ifuslot].wavelength[fiber] - line) <= 20. for line in line_list]
             for j, waverange in enumerate(fit_waves):
                 if np.nanmax(current_observation[fiber, waverange]) > thresh:
                     FFT = phase_cross_correlation(current_observation[fiber, waverange][np.newaxis, :],
