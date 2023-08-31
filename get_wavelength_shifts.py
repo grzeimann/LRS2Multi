@@ -98,7 +98,7 @@ for arc in CdA_obs:
     virus = VIRUSRaw(date, obs, h5table, basepath=basedir, exposure_number=exp,
                      ifuslots=ifuslots)
     for ifuslot in ifuslots:  
-        monthly_average = virus.info[ifuslot].lampsec * 1.
+        monthly_average = virus.info[ifuslot].lampspec * 1.
         current_observation = virus.info[ifuslot].data * 1.
         current_observation[np.isnan(current_observation)] = 0.0
         shifts = np.zeros((current_observation.shape[0],))
