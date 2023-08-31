@@ -117,6 +117,7 @@ def get_objects(dates, instrument='lrs2', rootdir='/work/03946/hetdex/maverick',
             NEXP = len(exposures)
             for i in np.arange(NEXP):
                 objectdict['%s_%07d_%02d' % (date, obsnum, i+1)] = Target
+                args.log.info('%s_%07d_%02d: %s' % (date, obsnum, i+1, Target))
         except:
             objectdict['%s_%07d_%02d' % (date, obsnum, NEXP)] = ''
             continue
@@ -128,11 +129,8 @@ def get_objects(dates, instrument='lrs2', rootdir='/work/03946/hetdex/maverick',
 # Get the observations for a list of nights
 ########################################################################
 basedir = '/work/03946/hetdex/maverick'
-print(args.daterange)
 dates = args.daterange  # Needs to be a list
 objectdict, ifuslots = get_objects(dates, instrument='virus',rootdir=basedir)
-for key in objectdict.keys():
-    print('Observation %s: %s' % (key, objectdict[key]))
     
 ########################################################################
 # We will use the object dictionary from the previous cell for file IDs
