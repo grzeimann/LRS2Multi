@@ -75,8 +75,8 @@ ifuslots = list(np.unique(['%03d' % i for i in h5table.cols.ifuslot[:]]))
 ifuslots = ifuslots[3:4]
 T = Table.read(args.object_table, format='ascii.fixed_width_two_line')
 
-keys = T['Exposure']
-values = T['Description']
+keys = list([str(t) for t in T['Exposure']])
+values = list(T['Description'])
 
 twi_obs = [key for key, value in zip(keys, values) if value == 'skyflat']
 CdA_obs = [key for key, value in zip(keys, values) if value == 'Cd-A']
@@ -92,7 +92,7 @@ fit_waves = [np.abs(def_wave - line) <=40. for line in line_list]
 
 CdA_list = []
 for arc in CdA_obs:
-    date = arc.split('_')[0]
+    date = arc[:8]
     obs = int(arc.split('_')[1])
     exp = int(arc.split('_')[2])
     virus = VIRUSRaw(date, obs, hdf5file, basepath=basedir, exposure_number=exp,
