@@ -77,7 +77,8 @@ for da in dateatt:
 args.daterange = [datetime.date.fromordinal(i)
                   for i in range(dates[dateatt[0]].toordinal(),
                                  dates[dateatt[1]].toordinal())]
-
+args.daterange = ['%04d%02d%02d' % (daten.year, daten.month, daten.day)
+                  for daten in args.daterange]
 
 def get_objects(dates, instrument='lrs2', rootdir='/work/03946/hetdex/maverick',
                 targets=None):
