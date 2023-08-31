@@ -93,8 +93,8 @@ fit_waves = [np.abs(def_wave - line) <=40. for line in line_list]
 CdA_list = []
 for arc in CdA_obs:
     date = arc[:8]
-    obs = int(arc.split('_')[1])
-    exp = int(arc.split('_')[2])
+    obs = int(arc[8:15])
+    exp = int(arc[15:])
     virus = VIRUSRaw(date, obs, hdf5file, basepath=basedir, exposure_number=exp,
                      ifuslots=ifuslots)
     for ifuslot in ifuslots:  
