@@ -99,11 +99,10 @@ for arc in CdA_obs:
                      ifuslots=ifuslots)
     for ifuslot in ifuslots:  
         monthly_average = virus.info[ifuslot].lampspec * 1.
-        current_observation = virus.info[ifuslot].data * 1.
+        current_observation = virus.info[ifuslot].orig * 1.
         current_observation[np.isnan(current_observation)] = 0.0
         shifts = np.zeros((current_observation.shape[0],))
         for fiber in np.arange(current_observation.shape[0]):
-            
             FFT = phase_cross_correlation(current_observation[fiber, :][np.newaxis, :],
                                           monthly_average[fiber, :][np.newaxis, :], 
                                           normalization=None, upsample_factor=100)
