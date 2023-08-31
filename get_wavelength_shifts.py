@@ -89,6 +89,7 @@ line_list = [3610.508, 4046.565, 4358.335, 4678.149, 4799.912,
                       4916.068, 5085.822, 5460.750]
 
 fit_waves = [np.abs(def_wave - line) <=40. for line in line_list]
+thresh = 500.
 
 CdA_list = []
 for arc in CdA_obs:
@@ -101,11 +102,13 @@ for arc in CdA_obs:
         monthly_average = virus.info[ifuslot].lampspec * 1.
         current_observation = virus.info[ifuslot].orig * 1.
         current_observation[np.isnan(current_observation)] = 0.0
-        shifts = np.zeros((current_observation.shape[0],))
+        shifts = np.ones((current_observation.shape[0], len(line_list))) * np.nan
         for fiber in np.arange(current_observation.shape[0]):
-            FFT = phase_cross_correlation(current_observation[fiber, :][np.newaxis, :],
-                                          monthly_average[fiber, :][np.newaxis, :], 
-                                          normalization=None, upsample_factor=100,
-                                          overlap_ratio=0.05)
-            shifts[fiber] = FFT[0][1]
-        print(np.nanmedian(shifts))
+            fit_waves = [np.abs(virus.info[ifuslot].wavelength[fiber] - line) <=40. for line in line_list]
+            for j, waverange in enumerate(fit_waves):
+                if np.nanmax(current_observation[fiber, waverange]) > thresh:
+                    FFT = phase_cross_correlation(current_observation[fiber, waverange][np.newaxis, :],
+                                                  monthly_average[fiber, waverange][np.newaxis, :], 
+                                                  normalization=None, upsample_factor=100)
+                    shifts[fiber, j] = FFT[0][1]
+            virus.log.info('Shift for fiber number: %0.2f' % np.nanmean(shifts[fiber, :]))
