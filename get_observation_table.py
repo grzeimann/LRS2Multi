@@ -127,6 +127,7 @@ def get_objects(dates, instrument='lrs2', rootdir='/work/03946/hetdex/maverick',
 # Get the observations for a list of nights
 ########################################################################
 basedir = '/work/03946/hetdex/maverick'
+print(args.daterange)
 dates = args.daterange  # Needs to be a list
 objectdict, ifuslots = get_objects(dates, instrument='virus',rootdir=basedir)
 for key in objectdict.keys():
