@@ -111,4 +111,4 @@ for arc in CdA_obs:
                                                   monthly_average[fiber, waverange][np.newaxis, :], 
                                                   normalization=None, upsample_factor=100)
                     shifts[fiber, j] = FFT[0][1]
-            virus.log.info('Shift for fiber number: %0.2f' % np.nanmean(shifts[fiber, :]))
+            print(shifts[fiber, :])
