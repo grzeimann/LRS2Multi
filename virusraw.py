@@ -193,9 +193,10 @@ class VIRUSRaw:
                     cnt += 1
             # ifupos, wavelength, masterbias, trace, masterflt
             for attr in ['wavelength', 'masterbias', 'trace', 'masterflt',
-                         'ifupos', 'mastersci']:
+                         'ifupos', 'mastersci', 'lampspec']:
                 image_list = []
                 cnt = 0
+                print(attr)
                 for ind in inds:
                     image_list.append(getattr(h5table.cols, attr)[ind])
                     if attr == 'trace':
