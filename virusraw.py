@@ -37,7 +37,7 @@ class VIRUSRaw:
     Wrapper for reduction routines for raw data 
     
     '''
-    def __init__(self, date, observation_number, hdf5file, 
+    def __init__(self, date, observation_number, h5table, 
                  exposure_number=1,
                  ifuslots=['052'], from_archive=False,
                  basepath='/work/03946/hetdex/maverick'):
@@ -51,7 +51,7 @@ class VIRUSRaw:
         observation_number : TYPE
             DESCRIPTION.
         hdf5file : TYPE
-            DESCRIPTION.
+            h5 calibration table
         exposure_number : float, optional
             DESCRIPTION. The default is 1.
         ifuslots : list, optional
@@ -127,8 +127,6 @@ class VIRUSRaw:
         self.info = {}
         name = 'multi_%s_%07d_%s_%s.fits'
         cnt = 0
-        h5file = tables.open_file(hdf5file, mode='r')
-        h5table = h5file.root.Cals
         for ifuslot in self.ifuslots:
             fname = filename.replace('%sLL' % ifuslots[0], 
                                      '%s%s' % (ifuslot, 'LL'))
@@ -161,7 +159,6 @@ class VIRUSRaw:
             self.info[ifuslot].datae[:] /= self.info[ifuslot].response[np.newaxis, :]
             self.info[ifuslot].header['MILLUM'] = area
             self.info[ifuslot].header['THROUGHP'] = transparency
-        h5file.close()
     
     class ChannelInfo:
         # Create channel info
