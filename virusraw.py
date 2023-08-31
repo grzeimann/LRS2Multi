@@ -411,7 +411,7 @@ class VIRUSRaw:
             tarfolders = sorted(glob.glob(tarfolders))
             if len(tarfolders) == 0:
                 area = 51.4e4
-                return default, default_t, default_iq
+                return default, default_t, default_iq, np.array([])
             for tarfolder in tarfolders:
                 T = tarfile.open(tarfolder, 'r')
 
