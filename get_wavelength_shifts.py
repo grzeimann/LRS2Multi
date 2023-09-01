@@ -115,6 +115,7 @@ for cnt, arc in enumerate(arc_list):
                                                   monthly_average[fiber, waverange][np.newaxis, :], 
                                                   normalization=None, upsample_factor=100)
                     shifts[fiber, j] = FFT[0][1]
+        print(shifts.shape, shift_dictionary[ifuslot].shape)
         shift_dictionary[ifuslot][cnt] = shifts
     time_list.append(Time(virus.info[ifuslot].header['DATE']))
     hum_list.append(virus.info[ifuslot].header['HUMIDITY'])
