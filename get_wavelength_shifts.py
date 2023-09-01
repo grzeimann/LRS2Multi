@@ -94,7 +94,7 @@ thresh = 150.
 arc_list = CdA_obs + Hg_obs
 shift_dictionary = {}
 for ifuslot in ifuslots:
-    shift_dictionary = np.nan * np.ones((len(arc_list), 448, len(line_list)))
+    shift_dictionary[ifuslot] = np.nan * np.ones((len(arc_list), 448, len(line_list)))
 time_list, hum_list, temp_list = ([], [], [])
 for cnt, arc in enumerate(arc_list):
     date = arc[:8]
@@ -115,7 +115,6 @@ for cnt, arc in enumerate(arc_list):
                                                   monthly_average[fiber, waverange][np.newaxis, :], 
                                                   normalization=None, upsample_factor=100)
                     shifts[fiber, j] = FFT[0][1]
-        print(shifts.shape, shift_dictionary[ifuslot].shape)
         shift_dictionary[ifuslot][cnt] = shifts
     time_list.append(Time(virus.info[ifuslot].header['DATE']))
     hum_list.append(virus.info[ifuslot].header['HUMIDITY'])
