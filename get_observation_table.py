@@ -138,6 +138,7 @@ objectdict, ifuslots = get_objects(dates, instrument='virus',rootdir=basedir)
 keys = list(objectdict.keys())
 values = list(objectdict.values())
 
-T = Table([keys, values], names=['Exposure', 'Description'])
+T = Table([keys, values], names=['Exposure', 'Description'],
+          dtype=['str', 'str'])
 T.write(args.output_file, format='ascii.fixed_width_two_line',
         overwrite=True)
