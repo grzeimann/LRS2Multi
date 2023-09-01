@@ -15,11 +15,10 @@ from astropy.table import Table
 sys.path.append("..") 
 
 import matplotlib.pyplot as plt
-import numpy as np
 import seaborn as sns
 from skimage.registration import phase_cross_correlation
-from astropy.modeling.models import Gaussian1D
-from astropy.modeling.fitting import LevMarLSQFitter
+from astropy.time import Time
+from astropy.io import fits
 
 from virusraw import VIRUSRaw
 
@@ -57,7 +56,8 @@ parser.add_argument('object_table', type=str,
 parser.add_argument('hdf5file', type=str,
                     help='''name of the hdf5 file''')
 
-
+parser.add_argument('outname', type=str,
+                    help='''name appended to shift output''')
 args = parser.parse_args(args=None)
 args.log = setup_logging('get_object_table')
 
@@ -91,8 +91,12 @@ line_list = [3610.508, 4046.565, 4358.335, 4678.149, 4799.912,
 fit_waves = [np.abs(def_wave - line) <=40. for line in line_list]
 thresh = 150.
 
-CdA_list = []
-for arc in CdA_obs + Hg_obs:
+arc_list = CdA_obs + Hg_obs
+shift_dictionary = {}
+for ifuslot in ifuslots:
+    shift_dictionary = np.nan * np.ones((len(arc_list), 448, len(line_list)))
+time_list, hum_list, temp_list = ([], [], [])
+for cnt, arc in enumerate(arc_list):
     date = arc[:8]
     obs = int(arc[8:15])
     exp = int(arc[15:])
@@ -111,4 +115,14 @@ for arc in CdA_obs + Hg_obs:
                                                   monthly_average[fiber, waverange][np.newaxis, :], 
                                                   normalization=None, upsample_factor=100)
                     shifts[fiber, j] = FFT[0][1]
-            print(shifts[fiber, :])
+        shift_dictionary[ifuslot][cnt] = shifts
+    time_list.append(Time(virus.info[ifuslot].header['DATE']))
+    hum_list.append(virus.info[ifuslot].header['HUMIDITY'])
+    temp_list.append(virus.info[ifuslot].header['AMBTEMP'])
+for ifuslot in ifuslots:
+    name = 'wavelength_shifts_%s_%s.fits' % (ifuslot, args.outname)
+    f  = fits.HDUList([fits.PrimaryHDU(), fits.ImageHDU(shift_dictionary[ifuslot]),
+                       fits.ImageHDU(np.array([t.mjd for t in time_list])),
+                       fits.ImageHDU(np.array([t for t in hum_list])),
+                       fits.ImageHDU(np.array([t for t in temp_list]))])
+    f.writeto(name, overwrite=True)
