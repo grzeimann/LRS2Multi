@@ -192,14 +192,24 @@ class VIRUSRaw:
                         inds.append(cnt)
                     cnt += 1
             # ifupos, wavelength, masterbias, trace, masterflt
+            self.trace_flag = [False, False, False, False]
+            self.wavelength_flag = [False, False, False, False]
             for attr in ['wavelength', 'masterbias', 'trace', 'masterflt',
                          'ifupos', 'mastersci', 'lampspec']:
                 image_list = []
                 cnt = 0
                 for ind in inds:
                     image_list.append(getattr(h5table.cols, attr)[ind])
+                    if attr == 'wavelength':
+                        if ((np.min(image_list[-1]) < 3460) or
+                            (np.max(image_list[-1]) > 5550)):
+                            self.wavelength_flag[cnt] = True
+                            image_list[-1][:] = np.linspace(3500, 5500, 1032)
                     if attr == 'trace':
-                        print(np.max(image_list[-1]), np.min(image_list[-1]))
+                        if ((np.min(image_list[-1]) < 2) or
+                            (np.max(image_list[-1]) > 1030)):
+                            self.trace_flag[cnt] = True
+                            image_list[-1][:] = 512 * np.ones((1032,))
                         image_list[-1] = image_list[-1] + cnt * 1032
                         cnt += 1
                 image = np.vstack(image_list)
@@ -276,6 +286,10 @@ class VIRUSRaw:
             hi = (i + 1) * 1032
             badcolumn = bad[li:hi].sum(axis=0) > badcolumnthresh
             bad[li:hi][:, badcolumn] = True
+            if self.trace_flag[i]:
+                bad[li:hi] = True
+            if self.wavelength_flag[i]:
+                bad[li:hi] = True
         self.info[ifuslot].badpixels = bad
 
     def reduce_channel(self, filename, ifuslot,
@@ -337,6 +351,7 @@ class VIRUSRaw:
         image[:] -= self.info[ifuslot].plaw
         
         image[self.info[ifuslot].badpixels] = np.nan
+        
         # Get spectra and error
         self.log.info('Getting Spectra for %s' % ifuslot)
         spec = get_spectra(image, self.info[ifuslot].trace)
