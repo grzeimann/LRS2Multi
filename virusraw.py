@@ -40,7 +40,8 @@ class VIRUSRaw:
     def __init__(self, date, observation_number, h5table, 
                  exposure_number=1,
                  ifuslots=['052'], from_archive=False,
-                 basepath='/work/03946/hetdex/maverick'):
+                 basepath='/work/03946/hetdex/maverick',
+                 lightmode=True):
         '''
         
 
@@ -163,6 +164,14 @@ class VIRUSRaw:
             self.info[ifuslot].datae[:] /= self.info[ifuslot].response[np.newaxis, :]
             self.info[ifuslot].header['MILLUM'] = area
             self.info[ifuslot].header['THROUGHP'] = transparency
+            if lightmode:
+                del (self.info[ifuslot].masterflt, 
+                     self.info[ifuslot].mastersci, 
+                     self.info[ifuslot].masterbias,
+                     self.info[ifuslot].image,
+                     self.info[ifuslot].plaw,
+                     self.info[ifuslot].badpixels)
+                    
     
     class ChannelInfo:
         # Create channel info
