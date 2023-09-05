@@ -72,7 +72,7 @@ hdf5file = args.hdf5file
 h5file = tables.open_file(hdf5file, mode='r')
 h5table = h5file.root.Cals
 ifuslots = list(np.unique(['%03d' % i for i in h5table.cols.ifuslot[:]]))
-ifuslots = ifuslots[3:4]
+ifuslots = ifuslots
 T = Table.read(args.object_table, format='ascii.fixed_width_two_line')
 
 keys = list([str(t) for t in T['Exposure']])
