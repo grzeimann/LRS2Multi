@@ -120,6 +120,7 @@ def get_shift(arc):
     timeobs = Time(virus.info[ifuslot].header['DATE'])
     hum = virus.info[ifuslot].header['HUMIDITY']
     temp = virus.info[ifuslot].header['AMBTEMP']
+    virus.log.info('Shifts finished %s_%07d_exp%02d' % (date, obs, exp))
     return shift_dictionary, timeobs, hum, temp
 
 
