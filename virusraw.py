@@ -199,7 +199,7 @@ class VIRUSRaw:
                         ifuslots, specids, ifuids, contids, amps):
                     if ((ifusl == ifuslot) and (amp == ampi)):
                         print(header['CONTID'], contid, header['IFUID'],
-                              header['SPECID'])
+                              header['SPECID'], specid)
                         if (header['SPECID'] == specid):
                             print('specid')
                         if (header['IFUID'] == ifuid):
