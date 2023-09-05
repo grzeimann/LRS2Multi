@@ -198,9 +198,16 @@ class VIRUSRaw:
                 for ifusl, specid, ifuid, contid, ampi in zip(
                         ifuslots, specids, ifuids, contids, amps):
                     if ((ifusl == ifuslot) and (amp == ampi)):
-                        print(header['CONTID'], contid, header['IFUID'])
+                        print(header['CONTID'], contid, header['IFUID'],
+                              header['SPECID'])
+                        if (header['SPECID'] == specid):
+                            print('specid')
+                        if (header['IFUID'] == ifuid):
+                            print('ifuid')
+                        if (header['CONTID'] == contid):
+                            print('contid')
                         if ((header['SPECID'] == int(specid)) and
-                            (header['IFUID'] == int(ifuid)) and
+                            (header['IFUID'] == ifuid) and
                             (header['CONTID'] == contid)):
                             inds.append(cnt)
                     cnt += 1
