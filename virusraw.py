@@ -191,21 +191,12 @@ class VIRUSRaw:
             specids = [i.decode("utf-8") for i in h5table.cols.specid[:]]
             ifuids = [i.decode("utf-8") for i in h5table.cols.ifuid[:]]
             amps = [x.decode("utf-8") for x in h5table.cols.amp[:]]
-            print(header['SPECID'], header['IFUID'], header['CONTID'])
             inds = []
             for amp in amp_list:
                 cnt = 0
                 for ifusl, specid, ifuid, contid, ampi in zip(
                         ifuslots, specids, ifuids, contids, amps):
                     if ((ifusl == ifuslot) and (amp == ampi)):
-                        print(header['CONTID'], contid, header['IFUID'],
-                              header['SPECID'], specid)
-                        if (header['SPECID'] == specid):
-                            print('specid')
-                        if (header['IFUID'] == ifuid):
-                            print('ifuid')
-                        if (header['CONTID'] == contid):
-                            print('contid')
                         if ((header['SPECID'] == int(specid)) and
                             (header['IFUID'] == ifuid) and
                             (header['CONTID'] == contid)):
