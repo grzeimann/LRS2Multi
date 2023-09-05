@@ -286,9 +286,9 @@ class VIRUSRaw:
             hi = (i + 1) * 1032
             badcolumn = bad[li:hi].sum(axis=0) > badcolumnthresh
             bad[li:hi][:, badcolumn] = True
-            if self.trace_flag[i]:
+            if self.info[ifuslot].trace_flag[i]:
                 bad[li:hi] = True
-            if self.wavelength_flag[i]:
+            if self.info[ifuslot].wavelength_flag[i]:
                 bad[li:hi] = True
         self.info[ifuslot].badpixels = bad
 
