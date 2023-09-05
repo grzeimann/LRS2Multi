@@ -199,7 +199,7 @@ class VIRUSRaw:
                 for ind in inds:
                     image_list.append(getattr(h5table.cols, attr)[ind])
                     if attr == 'trace':
-                        self.log.info('Max/Min Trace: %0.2f, %0.2f' %
+                        print('Max/Min Trace: %0.2f, %0.2f' %
                                        np.max(image_list[-1], 
                                        np.min(image_list[-1])))
                         image_list[-1] = image_list[-1] + cnt * 1032
