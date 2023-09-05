@@ -131,7 +131,11 @@ class VIRUSRaw:
             fname = filename.replace('%sLL' % ifuslots[0], 
                                      '%s%s' % (ifuslot, 'LL'))
             self.log.info('Loading calibration information')
-            self.info[ifuslot] = self.ChannelInfo(ifuslot, h5table,
+            
+            # Basic reduction
+            array_flt1, e1, header = base_reduction(fname, tarfolder=tarfolder,
+                                                    get_header=True)
+            self.info[ifuslot] = self.ChannelInfo(ifuslot, h5table, header,
                                                   amp_list=self.amporder)
             self.log.info('Masking pixels')
             self.mask_from_ldls(ifuslot)
@@ -162,7 +166,7 @@ class VIRUSRaw:
     
     class ChannelInfo:
         # Create channel info
-        def __init__(self, ifuslot, h5table, 
+        def __init__(self, ifuslot, h5table, header,
                      amp_list=['RU', 'RL', 'LL', 'LU']):
             '''
             
@@ -183,12 +187,19 @@ class VIRUSRaw:
             '''
             # get h5 file and info
             ifuslots = ['%03d' % i for i in h5table.cols.ifuslot[:]]
+            contids = [i.decode("utf-8") % i for i in h5table.cols.contid[:]]
+            specids = [i.decode("utf-8") for i in h5table.cols.specid[:]]
+            ifuids = [i.decode("utf-8") for i in h5table.cols.ifuid[:]]
             amps = [x.decode("utf-8") for x in h5table.cols.amp[:]]
             inds = []
             for amp in amp_list:
                 cnt = 0
-                for ifusl, ampi in zip(ifuslots, amps):
-                    if ifusl == ifuslot and amp == ampi:
+                for ifusl, specid, ifuid, contid, ampi in zip(
+                        ifuslots, specids, ifuids, contids, amps):
+                    if ((ifusl == ifuslot) and (amp == ampi) and
+                        (header['SPECID'] == specid) and
+                        (header['IFUID'] == ifuid) and
+                        (header['CONTID'] == contid)):
                         inds.append(cnt)
                     cnt += 1
             # ifupos, wavelength, masterbias, trace, masterflt
