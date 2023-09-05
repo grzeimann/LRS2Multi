@@ -197,11 +197,12 @@ class VIRUSRaw:
                 cnt = 0
                 for ifusl, specid, ifuid, contid, ampi in zip(
                         ifuslots, specids, ifuids, contids, amps):
-                    if ((ifusl == ifuslot) and (amp == ampi) and
-                        (header['SPECID'] == int(specid)) and
-                        (header['IFUID'] == int(ifuid)) and
-                        (header['CONTID'] == contid)):
-                        inds.append(cnt)
+                    if ((ifusl == ifuslot) and (amp == ampi)):
+                        print(header['CONTID'], contid, header['IFUID'])
+                        if ((header['SPECID'] == int(specid)) and
+                            (header['IFUID'] == int(ifuid)) and
+                            (header['CONTID'] == contid)):
+                            inds.append(cnt)
                     cnt += 1
             # ifupos, wavelength, masterbias, trace, masterflt
             self.trace_flag = [False, False, False, False]
