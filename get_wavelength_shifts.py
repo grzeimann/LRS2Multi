@@ -73,7 +73,7 @@ hdf5file = args.hdf5file
 h5file = tables.open_file(hdf5file, mode='r')
 h5table = h5file.root.Cals
 ifuslots = list(np.unique(['%03d' % i for i in h5table.cols.ifuslot[:]]))
-ifuslots = ifuslots
+ifuslots = ifuslots[:10]
 T = Table.read(args.object_table, format='ascii.fixed_width_two_line')
 
 keys = list([str(t) for t in T['Exposure']])
@@ -89,7 +89,6 @@ LDLS_obs = [key for key, value in zip(keys, values) if value == 'ldls_long']
 line_list = [3610.508, 4046.565, 4358.335, 4678.149, 4799.912,
                       4916.068, 5085.822, 5460.750]
 
-fit_waves = [np.abs(def_wave - line) <=40. for line in line_list]
 thresh = 150.
 
 arc_list = CdA_obs + Hg_obs
