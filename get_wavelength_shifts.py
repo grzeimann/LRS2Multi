@@ -19,6 +19,7 @@ import seaborn as sns
 from skimage.registration import phase_cross_correlation
 from astropy.time import Time
 from astropy.io import fits
+from multiprocessing import Pool
 
 from virusraw import VIRUSRaw
 
@@ -92,16 +93,16 @@ fit_waves = [np.abs(def_wave - line) <=40. for line in line_list]
 thresh = 150.
 
 arc_list = CdA_obs + Hg_obs
-shift_dictionary = {}
-for ifuslot in ifuslots:
-    shift_dictionary[ifuslot] = np.nan * np.ones((len(arc_list), 448, len(line_list)))
-time_list, hum_list, temp_list = ([], [], [])
-for cnt, arc in enumerate(arc_list):
+
+def get_shift(arc):
     date = arc[:8]
     obs = int(arc[8:15])
     exp = int(arc[15:])
     virus = VIRUSRaw(date, obs, h5table, basepath=basedir, exposure_number=exp,
                      ifuslots=ifuslots)
+    shift_dictionary = {}
+    for ifuslot in ifuslots:
+        shift_dictionary[ifuslot] = np.nan * np.ones((448, len(line_list)))
     for ifuslot in ifuslots:  
         monthly_average = virus.info[ifuslot].lampspec * 1.
         current_observation = virus.info[ifuslot].orig * 1.
@@ -115,10 +116,24 @@ for cnt, arc in enumerate(arc_list):
                                                   monthly_average[fiber, waverange][np.newaxis, :], 
                                                   normalization=None, upsample_factor=100)
                     shifts[fiber, j] = FFT[0][1]
-        shift_dictionary[ifuslot][cnt] = shifts
-    time_list.append(Time(virus.info[ifuslot].header['DATE']))
-    hum_list.append(virus.info[ifuslot].header['HUMIDITY'])
-    temp_list.append(virus.info[ifuslot].header['AMBTEMP'])
+        shift_dictionary[ifuslot] = shifts
+    timeobs = Time(virus.info[ifuslot].header['DATE'])
+    hum = virus.info[ifuslot].header['HUMIDITY']
+    temp = virus.info[ifuslot].header['AMBTEMP']
+    return shift_dictionary, timeobs, hum, temp
+
+
+P = Pool(16)
+res = P.map(get_shift, arc_list)
+P.close()
+shift_dictionary = {}
+for ifuslot in ifuslots:
+    shift_dictionary[ifuslot] = np.nan * np.ones((len(arc_list), 448, len(line_list)))
+for ifuslot in ifuslots:  
+    shift_dictionary[ifuslot] = [r[0][ifuslot] for r in res]
+time_list = [r[1] for r in res]
+hum_list = [r[2] for r in res]
+temp_list = [r[3] for r in res]
 for ifuslot in ifuslots:
     name = 'wavelength_shifts_%s_%s.fits' % (ifuslot, args.outname)
     f  = fits.HDUList([fits.PrimaryHDU(), fits.ImageHDU(shift_dictionary[ifuslot]),
