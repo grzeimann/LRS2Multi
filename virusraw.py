@@ -191,6 +191,7 @@ class VIRUSRaw:
             specids = [i.decode("utf-8") for i in h5table.cols.specid[:]]
             ifuids = [i.decode("utf-8") for i in h5table.cols.ifuid[:]]
             amps = [x.decode("utf-8") for x in h5table.cols.amp[:]]
+            print(header['SPECID'], header['IFUID'], header['CONTID'])
             inds = []
             for amp in amp_list:
                 cnt = 0
