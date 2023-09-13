@@ -374,7 +374,7 @@ class LRS2Multi:
         return xc, yc
     
     def model_source(self, detwave=None, wave_window=None, quick_skysub=True,
-                     func=np.nanmean):
+                     func=np.nanmean, radius=4):
         # Collapse spectrum 
         if detwave is None:
             detwave = self.detwave
@@ -387,10 +387,15 @@ class LRS2Multi:
         # Get initial model
         x0, y0 = (self.x[np.nanargmax(Y)], 
                   self.y[np.nanargmax(Y)])
-        GM = Gaussian2D(amplitude=np.nanmax(Y)*1e17, x_mean=x0, 
+        Y = Y / np.nansum(Y) * 20.
+        GM = Gaussian2D(amplitude=np.nanmax(Y), x_mean=x0, 
                         y_mean=y0)
-        fitter = TRFLSQFitter()
-        fit = fitter(GM, self.x, self.y, Y)
+        GM.x_mean.bounds = (x0 - 1., x0 + 1.)
+        GM.y_mean.bounds = (y0 - 1., y0 + 1.)
+        d = np.sqrt((self.x-x0)**2 + (self.y-y0)**2)
+        dsel = (d < radius) * (np.isfinite(Y))
+        fitter = LevMarLSQFitter()
+        fit = fitter(GM, self.x[dsel], self.y[dsel], Y[dsel])
         return fit
 
     def set_big_grid(self):
@@ -495,7 +500,7 @@ class LRS2Multi:
         sky = self.fiber_sky[np.newaxis, :] * np.ones((280,))[:, np.newaxis]
         self.sky = sky
         if polymodel:
-            fitter = TRFLSQFitter()
+            fitter = LevMarLSQFitter()
             for i in np.arange(len(self.wave)):
                 Y = self.data[:, i]
                 offx = self.adrx[i] - self.adrx0
