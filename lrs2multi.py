@@ -663,6 +663,8 @@ class LRS2Multi:
                                         np.nansum(W[rsel]**2)))
                 skyspectrum[i] = (np.nansum(W[rsel] * self.sky[rsel, i]) /
                                   np.nansum(W[rsel]**2))
+                if i == 1000:
+                    self.log.info('Aperture correction: %0.2f' % cor[i])
                 spectrum[i] /= cor[i]
                 spectrum_error[i] /= cor[i]
         self.spectrum = spectrum
