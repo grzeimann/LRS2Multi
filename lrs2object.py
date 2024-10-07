@@ -449,7 +449,10 @@ class LRS2Object:
                                        use_aperture=use_aperture, 
                                        radius=radius,
                                        model=model,
-                                       func=func, attr=attr)
+                                       func=func, attr=attr,
+                                       use_annuli=use_annuli,
+                                       inner_radius=inner_radius,
+                                       outer_radius=outer_radius)
             for i, L in enumerate(self.sides[key]):
                 if ((L.channel == self.blue_other_channel) or 
                     (L.channel==self.red_other_channel)):
@@ -466,7 +469,10 @@ class LRS2Object:
                                        use_aperture=use_aperture, 
                                        radius=radius,
                                        model=model,
-                                       func=func, attr=attr)
+                                       func=func, attr=attr,
+                                       use_annuli=use_annuli,
+                                       inner_radius=inner_radius,
+                                       outer_radius=outer_radius)
 
     def calculate_norm(self, detwave=None, wave_window=None, func=np.nansum):
         '''
