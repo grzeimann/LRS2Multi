@@ -669,7 +669,7 @@ class LRS2Multi:
                                   op.basename(self.filename)[:-5], cor[i]))
                 spectrum[i] /= cor[i]
                 spectrum_error[i] /= cor[i]
-              if use_annuli:
+            if use_annuli:
                 circarea = np.pi * (outer_radius**2 - inner_radius**2)
                 rsel = (d < outer_radius) * (d > inner_radius)
                 apcor = circarea / (rsel.sum() * hexarea)
