@@ -395,7 +395,8 @@ class LRS2Object:
 
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
                          wave_window=None, use_aperture=True, radius=2.5,
-                         model=None, func=np.nanmean, attr='skysub'):
+                         model=None, func=np.nanmean, attr='skysub',
+                         use_annuli=False, inner_radius=3.5, outer_radius=5.0):
         '''
         
 
