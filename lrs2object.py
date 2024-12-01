@@ -15,7 +15,7 @@ import astropy.units as u
 from astropy.nddata import NDData, StdDevUncertainty
 from specutils import Spectrum1D
 from astropy.table import Table
-from scipy.interpolate import interp2d
+from scipy.interpolate import LinearNDInterpolator
 
 
 class LRS2Object:
@@ -330,8 +330,8 @@ class LRS2Object:
         for key in self.sides.keys():
             for L in self.sides[key]:
                 if skypos is not None:
-                    X = interp2d(L.ra, L.dec, L.x)
-                    Y = interp2d(L.ra, L.dec, L.y)
+                    X = LinearNDInterpolator(list(zip(L.ra, L.dec))), L.x)
+                    Y = LinearNDInterpolator(list(zip(L.ra, L.dec))), L.y)
                     XC = X(skypos.ra.deg, skypos.dec.deg)
                     YC = Y(skypos.ra.deg, skypos.dec.deg)
                     if xoff is not None:
