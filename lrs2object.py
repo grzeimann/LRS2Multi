@@ -330,8 +330,8 @@ class LRS2Object:
         for key in self.sides.keys():
             for L in self.sides[key]:
                 if skypos is not None:
-                    X = LinearNDInterpolator(list(zip(L.ra, L.dec))), L.x)
-                    Y = LinearNDInterpolator(list(zip(L.ra, L.dec))), L.y)
+                    X = LinearNDInterpolator(list(zip(L.ra, L.dec)), L.x)
+                    Y = LinearNDInterpolator(list(zip(L.ra, L.dec)), L.y)
                     XC = X(skypos.ra.deg, skypos.dec.deg)
                     YC = Y(skypos.ra.deg, skypos.dec.deg)
                     if xoff is not None:
