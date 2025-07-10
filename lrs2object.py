@@ -462,6 +462,8 @@ class LRS2Object:
                         j = 0
                     if not use_aperture:
                         model = self.sides[key][j].model
+                        L.adrx0 = self.sides[key][j].adrx0
+                        L.adry0 = self.sides[key][j].adry0
                     L.extract_spectrum(xc=self.sides[key][j].centroid_x, 
                                        yc=self.sides[key][j].centroid_y, 
                                        detwave=detwave, 
