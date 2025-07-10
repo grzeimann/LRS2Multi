@@ -641,8 +641,8 @@ class LRS2Multi:
         for i in np.arange(len(self.wave)):
             offx = self.adrx[i] - self.adrx0
             offy = self.adry[i] - self.adry0
-            x = xc + offx
-            y = yc + offy
+            x = xc - offx
+            y = yc - offy
             d = np.sqrt((self.x - x)**2 + (self.y - y)**2)
             rsel = d < radius
             apcor = circarea / (rsel.sum() * hexarea)
