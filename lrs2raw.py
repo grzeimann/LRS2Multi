@@ -57,6 +57,7 @@ class LRS2Raw:
         '''
         self.setup_logging()
         self.date = date
+        self.raw = from_raw
         side_dict = {'blue': ['uv', 'orange'], 'red': ['red', 'farred']}
         channel_dict = {'uv': ['056LL', '056LU'], 
                         'orange': ['056RU', '056RL'],
@@ -65,7 +66,7 @@ class LRS2Raw:
         tarfolder = op.join(basepath, date, 'lrs2', 
                                  'lrs2%07d.tar' % observation_number)
         if from_raw:
-            tarfolder = op.join(basepath, '%s.tar')
+            tarfolder = op.join(basepath, '%s.tar' % date)
         else:
             tarfolder = op.join(basepath, date, 'lrs2', 
                                      'lrs2%07d.tar' % observation_number)
@@ -73,6 +74,7 @@ class LRS2Raw:
                        'exp%02d' % exposure_number)
         expstr = 'exp%02d' % exposure_number
         ampcase = '056LL'
+        obsname = 'lrs2%07d' % observation_number
         if op.exists(tarfolder):
             self.log.info('Found tarfile %s' % tarfolder)
             T = tarfile.open(tarfolder, 'r')
@@ -85,8 +87,17 @@ class LRS2Raw:
                 except:
                     flag = False
                     continue  
-                if (expstr in name) and (ampcase in name):
+                if (expstr in name) and (ampcase in name) and (obsname in name):
                     b = fits.open(T.extractfile(a))
+                    flag = False
+                    gotfile = True
+                    T.close()
+                if ('.tar' in name) and (obsname in name):
+                    inner_tar = tarfile.open(fileobj=T.extractfile(T.getmember(name)), mode='r')
+                    inner_names_list = inner_tar.getnames()
+                    names = [name for name in inner_names_list
+                             if (expstr in name) and (ampcase in name) and (obsname in name)]
+                    b = fits.open(inner_tar.extractfile(inner_tar.getmember(names[0])))
                     flag = False
                     gotfile = True
                     T.close()
@@ -204,10 +215,10 @@ class LRS2Raw:
         
         # Basic reduction
         array_flt1, e1, header = base_reduction(filename1, tarfolder=tarfolder,
-                                                get_header=True)
+                                                get_header=True, from_raw=self.raw)
         if header['EXPTIME'] < 0:
             header['EXPTIME'] = header['REXPTIME'] + 7
-        array_flt2, e2 = base_reduction(filename2, tarfolder=tarfolder)
+        array_flt2, e2 = base_reduction(filename2, tarfolder=tarfolder, from_raw=self.raw)
         image = np.vstack([array_flt1, array_flt2])
         E = np.vstack([e1, e2])
         image[:] -= self.info[channel].masterbias
@@ -257,7 +268,7 @@ class LRS2Raw:
             F = fits.open(fn)
             names = ['RHO_STRT', 'THE_STRT', 'PHI_STRT', 'X_STRT', 'Y_STRT']
             r, t, p, x, y = [F[0].header[name] for name in names]
-            mirror_illum = float(os.popen('/home1/00156/drory/illum_lib/hetillum -p'
+            mirror_illum = float(os.popen('/work/03730/gregz/maverick/illum_lib/hetillum -p'
                                  ' -x "[%0.4f,%0.4f,%0.4f]" "[%0.4f,%0.4f]" 256' %
                                           (x, y, p, 0.042, 0.014)).read().split('\n')[0])
             area = mirror_illum * default
