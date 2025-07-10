@@ -458,6 +458,7 @@ class LRS2Object:
                         j = 0
                     if not use_aperture:
                         model = self.sides[key][j].model
+                        print('Dummy %0.2f' % self.sides[key][j].centroid_x)
                     L.extract_spectrum(xc=self.sides[key][j].centroid_x, 
                                        yc=self.sides[key][j].centroid_y, 
                                        detwave=detwave, 
