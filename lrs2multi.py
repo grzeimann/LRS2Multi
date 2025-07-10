@@ -616,7 +616,8 @@ class LRS2Multi:
             
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
                          wave_window=None, use_aperture=True, radius=2.5,
-                         model=None, func=np.nanmean, attr='skysub'):
+                         model=None, func=np.nanmean, attr='skysub',
+                         use_annuli=False, inner_radius=3.5, outer_radius=5.0):
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
@@ -663,8 +664,19 @@ class LRS2Multi:
                                         np.nansum(W[rsel]**2)))
                 skyspectrum[i] = (np.nansum(W[rsel] * self.sky[rsel, i]) /
                                   np.nansum(W[rsel]**2))
+                if i == 1000:
+                    self.log.info('%s: Aperture correction: %0.2f' % (
+                                  op.basename(self.filename)[:-5], cor[i]))
                 spectrum[i] /= cor[i]
                 spectrum_error[i] /= cor[i]
+            if use_annuli:
+                circarea = np.pi * (outer_radius**2 - inner_radius**2)
+                rsel = (d < outer_radius) * (d > inner_radius)
+                apcor = circarea / (rsel.sum() * hexarea)
+                spectrum[i] = np.nansum(self.skysub[rsel, i], axis=0) * apcor
+                spectrum_error[i] = np.sqrt(np.nansum(
+                                         self.error[rsel, i]**2, axis=0)) * apcor
+                skyspectrum[i] = np.nansum(self.sky[rsel, i], axis=0) * apcor
         self.spectrum = spectrum
         self.spectrum_error = spectrum_error
         self.skyspectrum = skyspectrum

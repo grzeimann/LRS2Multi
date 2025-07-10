@@ -15,7 +15,7 @@ import astropy.units as u
 from astropy.nddata import NDData, StdDevUncertainty
 from specutils import Spectrum1D
 from astropy.table import Table
-from scipy.interpolate import interp2d
+from scipy.interpolate import LinearNDInterpolator
 
 
 class LRS2Object:
@@ -330,8 +330,8 @@ class LRS2Object:
         for key in self.sides.keys():
             for L in self.sides[key]:
                 if skypos is not None:
-                    X = interp2d(L.ra, L.dec, L.x)
-                    Y = interp2d(L.ra, L.dec, L.y)
+                    X = LinearNDInterpolator(list(zip(L.ra, L.dec)), L.x)
+                    Y = LinearNDInterpolator(list(zip(L.ra, L.dec)), L.y)
                     XC = X(skypos.ra.deg, skypos.dec.deg)
                     YC = Y(skypos.ra.deg, skypos.dec.deg)
                     if xoff is not None:
@@ -395,7 +395,8 @@ class LRS2Object:
 
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
                          wave_window=None, use_aperture=True, radius=2.5,
-                         model=None, func=np.nanmean, attr='skysub'):
+                         model=None, func=np.nanmean, attr='skysub',
+                         use_annuli=False, inner_radius=3.5, outer_radius=5.0):
         '''
         
 
@@ -448,7 +449,10 @@ class LRS2Object:
                                        use_aperture=use_aperture, 
                                        radius=radius,
                                        model=model,
-                                       func=func, attr=attr)
+                                       func=func, attr=attr,
+                                       use_annuli=use_annuli,
+                                       inner_radius=inner_radius,
+                                       outer_radius=outer_radius)
             for i, L in enumerate(self.sides[key]):
                 if ((L.channel == self.blue_other_channel) or 
                     (L.channel==self.red_other_channel)):
@@ -466,7 +470,10 @@ class LRS2Object:
                                        use_aperture=use_aperture, 
                                        radius=radius,
                                        model=model,
-                                       func=func, attr=attr)
+                                       func=func, attr=attr,
+                                       use_annuli=use_annuli,
+                                       inner_radius=inner_radius,
+                                       outer_radius=outer_radius)
 
     def calculate_norm(self, detwave=None, wave_window=None, func=np.nansum):
         '''
