@@ -1,3 +1,4 @@
+```python
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -265,7 +266,9 @@ class LRS2Multi:
     def plot_image(self, detwave=None, wave_window=None, quick_skysub=True,
                    func=np.nanmean, radius=4., attr='data',
                    sky_radius=5., sky_image=False,
-                   sky_annulus=False, inner_sky_radius=3., outer_sky_radius=4.):
+                   sky_annulus=False, inner_sky_radius=3., outer_sky_radius=4.,
+                   elliptical=False, a_radius=None, b_radius=None, 
+                   rotation_angle=0.):
         # Collapse spectrum 
         if detwave is None:
             detwave = self.detwave
@@ -302,21 +305,43 @@ class LRS2Multi:
         if hasattr(self, 'sn'):
             self.ax.text(0, 3.0, 'SN = %0.1f' % self.sn, fontsize=16, ha='center',
                          va='bottom', color='w')
+        
+        # Plot source aperture
         t = np.linspace(0, 2.*np.pi, 366)
-        xp = radius * np.cos(t) + xc
-        yp = radius * np.sin(t) + yc
-        self.ax.plot(xp, yp, 'k--', lw=2)
+        if not elliptical:
+            xp = radius * np.cos(t) + xc
+            yp = radius * np.sin(t) + yc
+            self.ax.plot(xp, yp, 'k--', lw=2)
+        else:
+            # Plot elliptical source aperture
+            theta = np.radians(rotation_angle)
+            # Parametric equations for rotated ellipse
+            xp = (radius * np.cos(t)) * np.cos(theta) - (radius * np.sin(t)) * np.sin(theta) + xc
+            yp = (radius * np.cos(t)) * np.sin(theta) + (radius * np.sin(t)) * np.cos(theta) + yc
+            self.ax.plot(xp, yp, 'k--', lw=2)
+
+        # Plot sky region
         if sky_annulus:
+            # Inner sky radius
             xp = inner_sky_radius * np.cos(t) + xc
             yp = inner_sky_radius * np.sin(t) + yc
             self.ax.plot(xp, yp, 'r--', lw=2)
+            # Outer sky radius
             xp = outer_sky_radius * np.cos(t) + xc
             yp = outer_sky_radius * np.sin(t) + yc
             self.ax.plot(xp, yp, 'r--', lw=2)
+        elif elliptical and a_radius is not None and b_radius is not None:
+            # Plot elliptical sky boundary
+            theta = np.radians(rotation_angle)
+            xp = (a_radius * np.cos(t)) * np.cos(theta) - (b_radius * np.sin(t)) * np.sin(theta) + xc
+            yp = (a_radius * np.cos(t)) * np.sin(theta) + (b_radius * np.sin(t)) * np.cos(theta) + yc
+            self.ax.plot(xp, yp, 'r--', lw=2)
         else:
+            # Circular sky radius
             xp = sky_radius * np.cos(t) + xc
             yp = sky_radius * np.sin(t) + yc
-        self.ax.plot(xp, yp, 'r--', lw=2)
+            self.ax.plot(xp, yp, 'r--', lw=2)
+
         self.ax.tick_params(axis='both', which='both', direction='in')
         self.ax.tick_params(axis='y', which='both', left=True, right=True)
         self.ax.tick_params(axis='x', which='both', bottom=True, top=True)
@@ -575,406 +600,3 @@ class LRS2Multi:
         if correct_ftf_from_skylines:
             if skypix.sum() > 50.:
                 Y = np.nanmean(self.data[:, skypix], axis=1)
-                Y = Y / np.nanmean(Y)
-                D = self.data / Y[:, np.newaxis]
-                self.fiber_sky = np.nanmedian(D[sky_sel], axis=0)
-                sky = self.fiber_sky[np.newaxis, :] * np.ones((280,))[:, np.newaxis]
-                self.sky = sky
-                self.skysub = D - self.sky
-        if local:
-            back = self.skysub * 1.
-            back[obj_sel] = np.nan
-            back[:, ignore_waves] = np.nan
-            G = Gaussian2DKernel(local_kernel)
-            new_back = interpolate_replace_nans(back, G, **{'boundary':'wrap'})
-            new_back[np.isnan(new_back)] = 0.0
-            kernel = self.round_up_to_odd(local_kernel)
-            new_back = medfilt2d(new_back, kernel)
-            self.local_sky = new_back
-            self.skysub[:] = self.skysub - new_back
-        if pca:
-            # Subtract continuum for PCA fitting
-            cont_sub = self.skysub * np.nan
-            self.pca_sky = self.skysub * 0.
-            for k in np.arange(pca_iter):
-                for i in np.arange(cont_sub.shape[0]):
-                    if np.isfinite(self.skysub[i]).sum() > 100:
-                        self.cont_model[i] = self.get_continuum(self.skysub[i], 
-                                                                ignore_waves, 
-                                                                bins=bins)
-                        cont_sub[i] = (self.skysub[i] - self.cont_model[i])
-    
-                       
-                # Fit PCA Model
-                yK = cont_sub[self.skyfiber_sel] / self.normcurve
-                yK[np.isnan(yK)] = 0.0
-                pca = PCA(n_components=ncomp).fit(yK)
-                Hk = pca.components_
-                
-    
-                self.pca_sky_temp = np.zeros(self.skysub.shape)
-                # Fit residuals for PCA eigenvalues and subtract model
-                for i in np.arange(self.skysub.shape[0]):
-                    if np.isfinite(self.skysub[i]).sum() > 100:
-                        yp = self.skysub[i] - self.get_continuum(self.skysub[i], 
-                                                           ignore_waves, bins=bins)
-                        yp[np.isnan(yp)] = 0.0
-                    else: 
-                        continue
-                    res = self.pca_fit(Hk, yp / self.normcurve, skypix)
-                    ycopy = 0. * yp
-                    ycopy[:] = res * self.normcurve
-                    ycopy[~skypix_alone] = 0.0
-                    self.pca_sky_temp[i] = ycopy
-                self.pca_sky += self.pca_sky_temp
-                self.skysub = self.skysub - self.pca_sky_temp
-            
-            
-    def extract_spectrum(self, xc=None, yc=None, detwave=None, 
-                         wave_window=None, use_aperture=True, radius=2.5,
-                         model=None, func=np.nanmean, attr='skysub',
-                         use_annuli=False, inner_radius=3.5, outer_radius=5.0):
-        if detwave is None:
-            detwave = self.detwave
-        if wave_window is None:
-            wave_window = self.wave_window
-        if self.manual:
-            xc = self.centroid_x
-            yc = self.centroid_y        
-        if ((xc is None) and (yc is None)):
-            xc, yc = self.find_centroid(detwave=detwave, 
-                                        wave_window=wave_window, 
-                                        quick_skysub=True,
-                                        func=func, attr=attr)
-        spectrum = self.wave * np.nan
-        spectrum_error = spectrum * 1.
-        skyspectrum = spectrum * 1.
-        cor = spectrum * 1.
-        
-        hexarea = 3 * np.sqrt(3.)*(0.59 / (2*np.sqrt(3.)) * 2.)**2 / 2.
-        circarea = np.pi * radius**2
-        
-        for i in np.arange(len(self.wave)):
-            offx = self.adrx[i] - self.adrx0
-            offy = self.adry[i] - self.adry0
-            x = xc + offx
-            y = yc + offy
-            d = np.sqrt((self.x - x)**2 + (self.y - y)**2)
-            rsel = d < radius
-            apcor = circarea / (rsel.sum() * hexarea)
-            if use_aperture:
-                cor = rsel.sum()
-                spectrum[i] = np.nansum(self.skysub[rsel, i], axis=0) * apcor
-                spectrum_error[i] = np.sqrt(np.nansum(
-                                         self.error[rsel, i]**2, axis=0)) * apcor
-                skyspectrum[i] = np.nansum(self.sky[rsel, i], axis=0) * apcor
-            else:
-                W = model(self.x - offx, self.y - offy)
-                WT = model(self.largex - offx, self.largey - offy)
-                cor[i] = W[rsel].sum() / WT.sum()
-                W = W / W[rsel].sum()
-                spectrum[i] = (np.nansum(W[rsel] * self.skysub[rsel, i]) /
-                                  np.nansum(W[rsel]**2))
-                spectrum_error[i] = (np.sqrt(np.nansum((
-                                     self.error[rsel, i])**2 * W[rsel]) / 
-                                        np.nansum(W[rsel]**2)))
-                skyspectrum[i] = (np.nansum(W[rsel] * self.sky[rsel, i]) /
-                                  np.nansum(W[rsel]**2))
-                if i == 1000:
-                    self.log.info('%s: Aperture correction: %0.2f' % (
-                                  op.basename(self.filename)[:-5], cor[i]))
-                spectrum[i] /= cor[i]
-                spectrum_error[i] /= cor[i]
-            if use_annuli:
-                circarea = np.pi * (outer_radius**2 - inner_radius**2)
-                rsel = (d < outer_radius) * (d > inner_radius)
-                apcor = circarea / (rsel.sum() * hexarea)
-                spectrum[i] = np.nansum(self.skysub[rsel, i], axis=0) * apcor
-                spectrum_error[i] = np.sqrt(np.nansum(
-                                         self.error[rsel, i]**2, axis=0)) * apcor
-                skyspectrum[i] = np.nansum(self.sky[rsel, i], axis=0) * apcor
-        self.spectrum = spectrum
-        self.spectrum_error = spectrum_error
-        self.skyspectrum = skyspectrum
-        flam_unit = (u.erg / u.cm**2 / u.s / u.AA)
-        nd = NDData(self.spectrum, unit=flam_unit, mask=np.isnan(self.spectrum),
-                    uncertainty=StdDevUncertainty(self.spectrum_error))
-        self.spec1D = Spectrum1D(spectral_axis=self.wave*u.AA, 
-                                 flux=nd.data*nd.unit, uncertainty=nd.uncertainty,
-                                 mask=nd.mask)
-        nd = NDData(self.skyspectrum, unit=flam_unit, mask=np.isnan(self.spectrum),
-                    uncertainty=StdDevUncertainty(self.spectrum_error))
-        self.spec1Dsky = Spectrum1D(spectral_axis=self.wave*u.AA, 
-                                 flux=nd.data*nd.unit, uncertainty=nd.uncertainty,
-                                 mask=nd.mask)
-        
-    def rectify(self, newwave):
-        new_disp_grid = newwave * u.AA
-        fluxc_resample = FluxConservingResampler()
-        self.spec1D = fluxc_resample(self.spec1D, new_disp_grid)
-        self.spec1Dsky = fluxc_resample(self.spec1Dsky, new_disp_grid)
-
-    def calculate_sn(self, detwave=None, wave_window=None):
-        if detwave is None:
-            detwave = self.detwave
-        if wave_window is None:
-            wave_window = self.wave_window
-        wsel = np.abs(self.spec1D.spectral_axis.value - self.detwave) < self.wave_window
-        signal = np.nansum(self.spec1D.flux.value[wsel])
-        noise = np.sqrt(np.nansum(1./self.spec1D.uncertainty.array[wsel]))
-        self.sn = signal / noise
-        return signal / noise
-    
-    def calculate_norm(self, detwave=None, wave_window=None, func=np.nanmean):
-        if detwave is None:
-            detwave = self.detwave
-        if wave_window is None:
-            wave_window = self.wave_window
-        wsel = np.abs(self.spec1D.spectral_axis.value - detwave) < wave_window
-        norm = func(self.spec1D.flux.value[wsel])
-        self.norm = norm
-        
-    def normalize(self, norm):
-        self.spec1D *= norm
-        self.spec1Dsky *= norm
-        self.skysub *= norm
-        self.error *= norm
-        self.spectrum *= norm
-        self.spectrum_error *= norm
-
-    def smooth_resolution(self, kernel):
-        G = Gaussian1DKernel(kernel)
-        self.spec1D = convolution_smooth(self.spec1D, G)
-        self.spec1Dsky = convolution_smooth(self.spec1Dsky, G)
-    
-    def round_up_to_odd(self, f):
-        return int(np.ceil(f) // 2 * 2 + 1)
-    
-    def get_ADR_RAdec(self, xoff, yoff, astrometry_object):
-            '''
-            Use an astrometry object to convert delta_x and delta_y into
-            delta_ra and delta_dec
-            
-            Parameters
-            ----------
-            astrometry_object : Astrometry Class
-                Contains the astrometry to convert x and y to RA and Dec
-            '''
-            tRA, tDec = astrometry_object.tp.wcs_pix2world(xoff, yoff, 1)
-            ADRra = ((tRA - astrometry_object.ra0) * 3600. *
-                          np.cos(np.deg2rad(astrometry_object.dec0)))
-            ADRdec = (tDec - astrometry_object.dec0) * 3600.
-            return ADRra, ADRdec
-    
-    def get_astrometry_external(self, R, D, rot):
-        xc, yc = (0., 0.)
-        s_str = self.header['QRA'] + " " + self.header['QDEC']
-        L = s_str
-        self.skycoord = SkyCoord(L, unit=(u.hourangle, u.deg))
-        A = Astrometry(R, D, 0., 0., 0.)
-        A.tp = A.setup_TP(R, D, rot, A.x0,  A.y0)
-        lrs2ra, lrs2dec = A.tp.wcs_pix2world(self.lrs2_coords[1] - self.y, 
-                                             self.lrs2_coords[0] + self.x, 1)
-        self.ra = lrs2ra
-        self.dec = lrs2dec
-        self.delta_ra = (np.cos(np.deg2rad(self.skycoord.dec.deg)) * -1 *
-                         (self.ra - self.skycoord.ra.deg) * 3600.)
-        self.delta_dec = (self.dec - self.skycoord.dec.deg) * 3600.
-        self.raoff, self.decoff = self.get_ADR_RAdec(self.adrx+xc-self.adrx0, 
-                                                     self.adry+yc-self.adry0, A)
-
-    def get_astrometry(self):
-        xc, yc = (0., 0.)
-        s_str = self.header['QRA'] + " " + self.header['QDEC']
-        L = s_str
-        self.skycoord = SkyCoord(L, unit=(u.hourangle, u.deg))
-        A = Astrometry(self.skycoord.ra.deg, self.skycoord.dec.deg, 
-                       self.header['PARANGLE'],
-                       xc, yc, x_scale=1., y_scale=1., kind='lrs2')
-        self.raoff, self.decoff = self.get_ADR_RAdec(self.adrx+xc-self.adrx0, 
-                                                     self.adry+yc-self.adry0, A)
-        ra, dec = A.tp.wcs_pix2world(self.x-self.centroid_x, 
-                                     self.y-self.centroid_y, 1)
-        self.ra = ra
-        self.dec = dec
-        self.delta_ra = (np.cos(np.deg2rad(self.skycoord.dec.deg)) *
-                         (ra - self.skycoord.ra.deg) * 3600.)
-        self.delta_dec = (dec - self.skycoord.dec.deg) * 3600.
-    
-    def write_skysub(self):
-        H = fits.HDUList([fits.PrimaryHDU(self.skysub), 
-                          fits.ImageHDU(self.local_sky),
-                          fits.ImageHDU(self.pca_sky)])
-        outname = self.filename.replace('multi', 'skysub')
-        H.writeto(outname, overwrite=True)
-    
-    def write_spectrum(self):
-        outname = op.basename(self.filename.replace('multi', 'spectrum'))
-        self.spec_ext[1] = self.spectrum
-        self.spec_ext[2] = self.spectrum_error
-        self.spec_ext[3] = self.skyspectrum
-        self.spec_ext[4] = self.spectrum_error
-        f1 = fits.PrimaryHDU(self.spec_ext)
-        he = self.header
-        for key in he.keys():
-            if key in f1.header:
-                continue
-            if 'SEC' in key:
-                continue
-            if ('BSCALE' in key) or ('BZERO' in key):
-                continue
-            try:
-                f1.header[key] = he[key]
-            except:
-                continue
-        names = ['wavelength', 'F_lambda', 'Sky_lambda', 'e_F_lambda',
-                 'e_Sky_lambda', 'response']
-        f1.header['DWAVE'] = self.wave[1] - self.wave[0]
-        f1.header['WAVE0'] = self.wave[0]
-        f1.header['WAVESOL'] = 'WAVE0 + DWAVE * linspace(0, NAXIS1)'
-        f1.header['WAVEUNIT'] = 'A'
-        f1.header['FLUXUNIT'] = 'ergs/s/cm2/A'
-        f1.header['CRVAL1'] = self.wave[0]
-        f1.header['CRPIX1'] = 1
-        f1.header['CDELT1'] = self.wave[1] - self.wave[0]
-        for i, name in enumerate(names):
-            f1.header['ROW%i' % (i+1)] = name
-        f1.writeto(outname, overwrite=True)
-        
-    def write_cube(self, Dcube, wave, outname):
-        '''
-        Write data cube to fits file
-        
-        Parameters
-        ----------
-        wave : 1d numpy array
-            Wavelength for data cube
-        xgrid : 2d numpy array
-            x-coordinates for data cube
-        ygrid : 2d numpy array
-            y-coordinates for data cube
-        Dcube : 3d numpy array
-            Data cube, corrected for ADR
-        outname : str
-            Name of the outputted fits file
-        he : object
-            hdu header object to carry original header information
-        '''
-        hdu = fits.PrimaryHDU(np.array(Dcube, dtype='float32'))
-        hdu.header['CRVAL1'] = self.skycoord.ra.deg
-        hdu.header['CRVAL2'] = self.skycoord.dec.deg
-        hdu.header['CRVAL3'] = wave[0]
-        hdu.header['CRPIX1'] = int(self.xgrid.shape[0]/2.)
-        hdu.header['CRPIX2'] = int(self.xgrid.shape[1]/2.)
-        hdu.header['CRPIX3'] = 1
-        hdu.header['CTYPE1'] = 'RA---TAN'
-        hdu.header['CTYPE2'] = 'DEC--TAN'
-        hdu.header['CTYPE3'] = 'WAVE'
-        hdu.header['CUNIT1'] = 'deg'
-        hdu.header['CUNIT2'] = 'deg'
-        hdu.header['CUNIT3'] = 'Angstrom'
-        hdu.header['SPECSYS'] = 'TOPOCENT'
-        hdu.header['CDELT1'] = (self.xgrid[0, 0] - self.xgrid[0, 1]) / 3600.
-        hdu.header['CDELT2'] = (self.ygrid[1, 0] - self.ygrid[0, 0]) / 3600.
-        hdu.header['CDELT3'] = (wave[1] - wave[0])
-        for key in self.header.keys():
-            if key in hdu.header:
-                continue
-            if ('CCDSEC' in key) or ('DATASEC' in key):
-                continue
-            if ('BSCALE' in key) or ('BZERO' in key):
-                continue
-            hdu.header[key] = self.header[key]
-        hdu.writeto(outname, overwrite=True)
-
-    def interpolate_spectrum(self, wave, new_wave, spectrum, kernel):
-        new_spec = np.interp(new_wave, wave, spectrum, left=np.nan, right=np.nan)
-        new_spec = convolve(new_spec, Gaussian1DKernel(kernel), 
-                            preserve_nan=True, boundary='extend')
-        return new_spec
-
-    def make_cube(self, newwave, scale=0.4, ran=[-7., 7., -7., 7.],
-                  
-                  
-                  radius=0.7, kernel=0.1):
-        '''
-        Make data cube for a given ifuslot
-        
-        Parameters
-        ----------
-        xloc : 1d numpy array
-            fiber positions in the x-direction [ifu frame]
-        yloc : 1d numpy array
-            fiber positions in the y-direction [ifu frame]
-        data : 2d numpy array
-            fiber spectra [N fibers x M wavelength]
-        Dx : 1d numpy array
-            Atmospheric refraction in x-direction as a function of wavelength
-        Dy : 1d numpy array
-            Atmospheric refraction in y-direction as a function of wavelength
-        ftf : 1d numpy array
-            Average fiber to fiber normalization (1 value for each fiber)
-        scale : float
-            Spatial pixel scale in arcseconds
-        seeing_fac : float
-        
-        Returns
-        -------
-        Dcube : 3d numpy array
-            Data cube, corrected for ADR
-        xgrid : 2d numpy array
-            x-coordinates for data cube
-        ygrid : 2d numpy array
-            y-coordinates for data cube
-        '''
-        a, b = self.skysub.shape
-        N1 = int((ran[1] - ran[0]) / scale)+1
-        N2 = int((ran[3] - ran[2]) / scale)+1
-        xgrid, ygrid = np.meshgrid(np.linspace(ran[0], ran[1], N1),
-                                   np.linspace(ran[2], ran[3], N2))
-        Dcube = np.zeros((b,) + xgrid.shape)
-        Ecube = np.zeros((b,) + xgrid.shape)
-
-        S = np.zeros((self.skysub.shape[0], 2))
-        D = np.sqrt((self.delta_ra - self.delta_ra[:, np.newaxis])**2 +
-                    (self.delta_dec - self.delta_dec[:, np.newaxis])**2)
-        
-        bottom = 3 * np.sqrt(3.)*(0.59 / (2*np.sqrt(3.)) * 2.)**2 / 2.
-        area = scale**2 / bottom
-        good = np.isnan(self.skysub).sum(axis=1) < 150
-        W = np.zeros(D.shape, dtype=bool)
-        W[D < radius] = True
-        for k in np.arange(b):
-            S[:, 0] = self.delta_ra - self.raoff[k]
-            S[:, 1] = self.delta_dec - self.decoff[k]
-            sel = (self.skysub[:, k] / np.nansum(self.skysub[:, k] * W, axis=1)) <= 0.4
-            sel *= np.isfinite(self.skysub[:, k]) * good * (self.error[:, k] > 0.)
-            if np.sum(sel) > 15:
-                Dcube[k, :, :] = (griddata(S[sel], self.skysub[sel, k],
-                                           (xgrid, ygrid), method='linear') * area)
-                Ecube[k, :, :] = (griddata(S[sel], self.error[sel, k],
-                                           (xgrid, ygrid), method='linear') * area)
-        
-        NewCUBE = np.zeros((len(newwave), xgrid.shape[0], xgrid.shape[1]))
-        NewCUBEe = np.zeros((len(newwave), xgrid.shape[0], xgrid.shape[1]))
-        for i in np.arange(xgrid.shape[0]):
-            for j in np.arange(xgrid.shape[1]):
-                NewCUBE[:, i, j] = self.interpolate_spectrum(self.wave, 
-                                                             newwave, 
-                                                             Dcube[:, i, j], 
-                                                             kernel)
-                NewCUBEe[:, i, j] = self.interpolate_spectrum(self.wave, 
-                                                              newwave, 
-                                                              Ecube[:, i, j], 
-                                                              kernel) 
-        self.cube = NewCUBE
-        self.error_cube = NewCUBEe
-        flam_unit = (u.erg / u.cm**2 / u.s / u.AA)
-        nd = NDData(np.moveaxis(self.cube, 0, -1), unit=flam_unit, 
-                    mask=np.isnan(np.moveaxis(self.cube, 0, -1)),
-                    uncertainty=StdDevUncertainty(np.moveaxis(self.error_cube, 0, -1)))
-        self.spec3D = Spectrum1D(spectral_axis=newwave*u.AA, 
-                                 flux=nd.data*nd.unit, uncertainty=nd.uncertainty,
-                                 mask=nd.mask)
-        self.xgrid = xgrid
-        self.ygrid = ygrid
