@@ -313,8 +313,8 @@ class LRS2Multi:
             # Plot elliptical source aperture
             theta = np.radians(rotation_angle)
             # Parametric equations for rotated ellipse
-            xp = (a_radius * np.cos(t)) * np.cos(theta) - (a_radius * np.sin(t)) * np.sin(theta) + xc
-            yp = (b_radius * np.cos(t)) * np.sin(theta) + (b_radius * np.sin(t)) * np.cos(theta) + yc
+            xp = (a_radius * np.cos(t)) * np.cos(theta) - (b_radius * np.sin(t)) * np.sin(theta) + xc
+            yp = (a_radius * np.cos(t)) * np.sin(theta) + (b_radius * np.sin(t)) * np.cos(theta) + yc
             self.ax.plot(xp, yp, 'r--', lw=2)
         elif sky_annulus:
             xp = inner_sky_radius * np.cos(t) + xc
