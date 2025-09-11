@@ -155,7 +155,8 @@ class LRS2Object:
                         pca_iter=1, percentile=25, use_percentile_sky=False,
                         polymodel=False, polyorder=4, sky_annulus=False, 
                         inner_sky_radius=2.5, outer_sky_radius=5.,
-                        line_by_line=False):
+                        line_by_line=False, elliptical=False, a_radius=None, b_radius=None,
+                        rotation_angle=0.):
         '''
         
 
@@ -257,7 +258,8 @@ class LRS2Object:
                            polymodel=polymodel, polyorder=polyorder,
                            sky_annulus=sky_annulus, inner_sky_radius=inner_sky_radius,
                            outer_sky_radius=outer_sky_radius,
-                           line_by_line=line_by_line)
+                           line_by_line=line_by_line, elliptical=elliptical,
+                                      a_radius=a_radius, b_radius=b_radius, rotation_angle=rotation_angle)
             for i, L in enumerate(self.sides[key]):
                 if ((L.channel == self.blue_other_channel) or
                     (L.channel==self.red_other_channel)):
@@ -291,7 +293,8 @@ class LRS2Object:
                           polymodel=polymodel, polyorder=polyorder,
                           sky_annulus=sky_annulus, inner_sky_radius=inner_sky_radius,
                           outer_sky_radius=outer_sky_radius,
-                          line_by_line=line_by_line)
+                          line_by_line=line_by_line, elliptical=elliptical,
+                                      a_radius=a_radius, b_radius=b_radius, rotation_angle=rotation_angle)
     
     def set_manual_extraction(self, xc=None, yc=None, skypos=None,
                               xoff=None, yoff=None, detwave=None, 

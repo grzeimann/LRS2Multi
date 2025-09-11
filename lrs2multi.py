@@ -471,7 +471,9 @@ class LRS2Multi:
                         peakthresh=7., pca_iter=1, percentile=25,
                         use_percentile_sky=False, polymodel=False,
                         polyorder=4, sky_annulus=False, inner_sky_radius=2.5,
-                        outer_sky_radius=5., line_by_line=False):
+                        outer_sky_radius=5., line_by_line=False,
+                        elliptical=False, a_radius=None, b_radius=None,
+                        rotation_angle=0.):
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
@@ -487,6 +489,20 @@ class LRS2Multi:
                                         sky_radius=sky_radius)
         if use_percentile_sky:
             sky_sel = self.sky_sel
+        elif elliptical and a_radius is not None and b_radius is not None:
+            # Convert angle to radians
+            theta = np.radians(rotation_angle)
+
+            # Transform coordinates to ellipse frame
+            dx = self.x - xc
+            dy = self.y - yc
+
+            # Rotate coordinates
+            x_rot = dx * np.cos(theta) + dy * np.sin(theta)
+            y_rot = -dx * np.sin(theta) + dy * np.cos(theta)
+
+            # Ellipse equation: (x/a)^2 + (y/b)^2 > 1 for points outside
+            sky_sel = ((x_rot / a_radius) ** 2 + (y_rot / b_radius) ** 2) > 1.0
         else:
             sky_sel = np.sqrt((self.x - xc)**2 + (self.y - yc)**2) > sky_radius
         if sky_annulus:
