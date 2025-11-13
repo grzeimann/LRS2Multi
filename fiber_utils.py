@@ -56,7 +56,7 @@ def orient_image(image, amp, ampname):
             image[:] = image[:, ::-1]
     return image
 
-def base_reduction(filename, tarfolder=None, get_header=False):
+def base_reduction(filename, tarfolder=None, get_header=False, from_raw=False):
     '''
     Reduce filename from tarfile or fits file.
     
@@ -86,7 +86,10 @@ def base_reduction(filename, tarfolder=None, get_header=False):
     # Load fits file
     if tarfolder is not None:
         T = tarfile.open(tarfolder, 'r')
-        a = fits.open(T.extractfile('/'.join(filename.split('/')[-4:])))
+        if from_raw:
+            a = fits.open(T.extractfile('/'.join(filename.split('/')[-6:])))
+        else:
+            a = fits.open(T.extractfile('/'.join(filename.split('/')[-4:])))
     else:
         a = fits.open(filename)
 
