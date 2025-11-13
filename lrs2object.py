@@ -771,7 +771,7 @@ class LRS2Object:
         for L in L_dict:
             wave = L.spec3D.spectral_axis.value
             y.append(L.spec3D.flux.value)
-            z.append(1./L.spec3D.uncertainty.array)
+            z.append(L.spec3D.uncertainty.array)
             if L.side == 'blue':
                 l1 = 4635.
                 l2 = 4645.
@@ -855,7 +855,7 @@ class LRS2Object:
             sSp, esSp = self.get_single_cube_for_side(self.sides[key])
             specs.append(sSp)
             weights.append(self.SN[key] * np.isfinite(specs[-1]))
-            variances.append(esSp)
+            variances.append(esSp**2)
         L.log.info('Making combined cube')
         specs, weights, variances = [np.array(x) for x in 
                                      [specs, weights, variances]]
