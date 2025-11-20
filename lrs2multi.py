@@ -693,25 +693,17 @@ class LRS2Multi:
                 # Evaluate total model flux on a consistent large grid
                 WT = model(big_largex - offx, big_largey - offy)
                 cor[i] = W[rsel].sum() / WT.sum()
-                # Normalize weights to unit sum within aperture for an unbiased amplitude
                 W = W / W[rsel].sum()
-                # Optimal (matched-filter) estimate within the sampled fibers
                 spectrum[i] = (np.nansum(W[rsel] * self.skysub[rsel, i]) /
                                   np.nansum(W[rsel]**2))
-                # Propagate uncertainty (assumes uncorrelated fiber errors)
-                spectrum_error[i] = (np.sqrt(np.nansum(((
-                                     self.error[rsel, i])**2) * (W[rsel]**2)) / 
+                spectrum_error[i] = (np.sqrt(np.nansum((
+                                     self.error[rsel, i])**2 * W[rsel]) /
                                         np.nansum(W[rsel]**2)))
                 skyspectrum[i] = (np.nansum(W[rsel] * self.sky[rsel, i]) /
                                   np.nansum(W[rsel]**2))
-                # Correct for IFU fill factor to match aperture-based flux scaling
-                spectrum[i] *= apcor
-                spectrum_error[i] *= apcor
-                skyspectrum[i] *= apcor
                 if i == 1000:
                     self.log.info('%s: Aperture correction: %0.2f' % (
                                   op.basename(self.filename)[:-5], cor[i]))
-                # Scale by the fraction of model flux inside the aperture to recover total flux
                 spectrum[i] /= cor[i]
                 spectrum_error[i] /= cor[i]
             if use_annuli:
