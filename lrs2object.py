@@ -467,8 +467,9 @@ class LRS2Object:
                         model = self.sides[key][j].model
                         big_largex = self.sides[key][j].largex
                         big_largey = self.sides[key][j].largey
-                       # L.adrx0 = self.sides[key][j].adrx0
-                       # L.adry0 = self.sides[key][j].adry0
+                        # Align ADR zero points with the detect channel to keep the model frame consistent
+                        L.adrx0 = self.sides[key][j].adrx0
+                        L.adry0 = self.sides[key][j].adry0
                     else:
                         big_largex = None
                         big_largey = None
