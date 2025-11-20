@@ -731,11 +731,15 @@ class LRS2Object:
             Error for combined side spectrum
 
         '''
-        w, y, z = ([], [], [])
+        w, y, z, waves, wsel_list, chans, sides = ([], [], [], [], [], [], [])
         for L in L_dict:
             wave = L.spec1D.spectral_axis.value
+            waves.append(wave)
             y.append(L.spec1D.flux.value)
+            # store inverse-uncertainty (current convention in this method)
             z.append(1./L.spec1D.uncertainty.array)
+            chans.append(L.channel)
+            sides.append(L.side)
             if L.side == 'blue':
                 l1 = 4635.
                 l2 = 4645.
@@ -744,13 +748,46 @@ class LRS2Object:
                 l1 = 8275.
                 l2 = 8400.
                 wsel = (wave >= l1) * (wave <= l2)
+            wsel_list.append(wsel)
             if (L.channel == 'farred') or (L.channel == 'orange'):
                 _w = (wave - l1) / (l2 - l1)
                 w.append(_w)
             else:
                 _w = (l2 - wave) / (l2 - l1)
                 w.append(_w)
+        # Attempt to robustly align flux scales between detect and other channels
+        # using the overlap region on a per-exposure basis. This mitigates residual
+        # ~10% jumps from seeing/throughput differences across channels.
+        if len(y) == 2:
+            # Determine which index is the detect channel based on side
+            side = sides[0]
+            detect_name = self.blue_detect_channel if side == 'blue' else self.red_detect_channel
+            if chans[0] == detect_name:
+                di, oi = 0, 1
+            elif chans[1] == detect_name:
+                di, oi = 1, 0
+            else:
+                di, oi = 0, 1  # fallback: keep original order
+            # Build overlap mask requiring finite flux and positive inverse-uncertainty
+            wmask = wsel_list[di] & wsel_list[oi]
+            mask = wmask & np.isfinite(y[di]) & np.isfinite(y[oi]) & (z[di] > 0) & (z[oi] > 0)
+            if np.sum(mask) > 5:
+                ratio = y[di][mask] / np.where(y[oi][mask] != 0, y[oi][mask], np.nan)
+                # Remove outliers via percentile clipping
+                lo, hi = np.nanpercentile(ratio, [5, 95])
+                good = (ratio >= lo) & (ratio <= hi)
+                r = np.nanmedian(ratio[good])
+                # Apply reasonable bounds to avoid pathological scaling
+                if np.isfinite(r):
+                    r = np.clip(r, 0.5, 2.0)
+                    # Scale the non-detect channel to match detect in overlap
+                    y[oi] = y[oi] * r
+                    # Uncertainty scales with the same factor; inverse-uncertainty scales inversely
+                    z[oi] = z[oi] / r
+        # Combine with existing linear weights across the overlap
         sSp = np.nanmean(y, axis=0)
+        # use overlap mask from the first channel (assumes same grid); fall back if needed
+        wsel = wsel_list[0] if len(wsel_list) > 0 else np.zeros_like(sSp, dtype=bool)
         sSp[wsel] = y[0][wsel] * w[0][wsel] + y[1][wsel] * w[1][wsel]
         esSp = np.nanmean(z, axis=0)
         esSp[wsel] = z[0][wsel] * (w[0][wsel]) + z[1][wsel] * (w[1][wsel])
