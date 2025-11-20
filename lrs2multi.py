@@ -643,7 +643,8 @@ class LRS2Multi:
     def extract_spectrum(self, xc=None, yc=None, detwave=None, 
                          wave_window=None, use_aperture=True, radius=2.5,
                          model=None, func=np.nanmean, attr='skysub',
-                         use_annuli=False, inner_radius=3.5, outer_radius=5.0):
+                         use_annuli=False, inner_radius=3.5, outer_radius=5.0,
+                         big_largex=None, big_largey=None):
         if detwave is None:
             detwave = self.detwave
         if wave_window is None:
@@ -660,6 +661,15 @@ class LRS2Multi:
         spectrum_error = spectrum * 1.
         skyspectrum = spectrum * 1.
         cor = spectrum * 1.
+        
+        # Choose the large grid to evaluate total model flux on.
+        # By default use this channel's big grid, but allow a reference grid
+        # (e.g., from the detect channel) to be provided for consistent
+        # normalization across channels.
+        if big_largex is None:
+            big_largex = self.largex
+        if big_largey is None:
+            big_largey = self.largey
         
         hexarea = 3 * np.sqrt(3.)*(0.59 / (2*np.sqrt(3.)) * 2.)**2 / 2.
         circarea = np.pi * radius**2
@@ -680,7 +690,8 @@ class LRS2Multi:
                 skyspectrum[i] = np.nansum(self.sky[rsel, i], axis=0) * apcor
             else:
                 W = model(self.x - offx, self.y - offy)
-                WT = model(self.largex - offx, self.largey - offy)
+                # Evaluate total model flux on a consistent large grid
+                WT = model(big_largex - offx, big_largey - offy)
                 cor[i] = W[rsel].sum() / WT.sum()
                 W = W / W[rsel].sum()
                 spectrum[i] = (np.nansum(W[rsel] * self.skysub[rsel, i]) /

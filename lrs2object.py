@@ -465,8 +465,13 @@ class LRS2Object:
                         j = 0
                     if not use_aperture:
                         model = self.sides[key][j].model
+                        big_largex = self.sides[key][j].largex
+                        big_largey = self.sides[key][j].largey
                        # L.adrx0 = self.sides[key][j].adrx0
                        # L.adry0 = self.sides[key][j].adry0
+                    else:
+                        big_largex = None
+                        big_largey = None
                     L.extract_spectrum(xc=self.sides[key][j].centroid_x, 
                                        yc=self.sides[key][j].centroid_y, 
                                        detwave=detwave, 
@@ -477,7 +482,9 @@ class LRS2Object:
                                        func=func, attr=attr,
                                        use_annuli=use_annuli,
                                        inner_radius=inner_radius,
-                                       outer_radius=outer_radius)
+                                       outer_radius=outer_radius,
+                                       big_largex=big_largex,
+                                       big_largey=big_largey)
 
     def calculate_norm(self, detwave=None, wave_window=None, func=np.nansum):
         '''
