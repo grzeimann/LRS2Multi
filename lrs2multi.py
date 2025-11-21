@@ -601,6 +601,7 @@ class LRS2Multi:
             kernel = self.round_up_to_odd(local_kernel)
             new_back = medfilt2d(new_back, kernel)
             self.local_sky = new_back
+            self.sky += self.local_sky
             self.skysub[:] = self.skysub - new_back
         if pca:
             # Subtract continuum for PCA fitting
@@ -637,6 +638,7 @@ class LRS2Multi:
                     ycopy[~skypix_alone] = 0.0
                     self.pca_sky_temp[i] = ycopy
                 self.pca_sky += self.pca_sky_temp
+                self.sky += self.pca_sky
                 self.skysub = self.skysub - self.pca_sky_temp
             
             
