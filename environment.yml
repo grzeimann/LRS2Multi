@@ -1,0 +1,15 @@
+name: lrs2multi
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.9
+  - numpy>=1.22
+  - scipy>=1.8
+  - matplotlib>=3.5
+  - astropy>=5.0
+  - specutils>=1.9
+  - scikit-learn>=1.1
+  - tables>=3.7
+  - seaborn>=0.12
+  - scikit-image>=0.20
