@@ -160,13 +160,13 @@ def fit_lrs2_dichroic(
     orange,
     fit_range=(4635.0, 4645.0),
     orange_fit_min=4638.0,
-    shift_bounds=(-3.0, 3.0),
+    shift_bounds=(-10.0, 12.0),
     scale_bounds=(0.95, 1.05),
     throughput_floor=0.02,
     min_valid_fraction=0.6,
     apply_grey_scale=True,
     scan_points=121,
-    repair_orange_response=False,
+    repair_orange_response=True,
 ):
     """
     Fit a wavelength displacement of the LRS2-B dichroic response.
