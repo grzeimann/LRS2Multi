@@ -99,7 +99,7 @@ def _load_lrs2_spectrum(obj):
     }
 
 
-def _make_interp(wave, values):
+def _make_interp(wave, values, extrapolate=True):
     """
     Build a shape-preserving interpolator from finite samples.
 
@@ -109,11 +109,15 @@ def _make_interp(wave, values):
         Wavelength coordinates.
     values : array_like
         Values sampled at ``wave``.
+    extrapolate : bool, optional
+        Allow evaluation outside the native wavelength range. Response curves
+        should generally use ``False`` so an inferred shift cannot be driven
+        by an unconstrained edge extrapolation.
 
     Returns
     -------
     scipy.interpolate.PchipInterpolator
-        Shape-preserving cubic interpolator with extrapolation.
+        Shape-preserving cubic interpolator.
     """
     good = np.isfinite(wave) & np.isfinite(values)
 
@@ -128,7 +132,7 @@ def _make_interp(wave, values):
     x = x[keep]
     y = y[keep]
 
-    return PchipInterpolator(x, y, extrapolate=True)
+    return PchipInterpolator(x, y, extrapolate=extrapolate)
 
 
 def _repair_orange_response(wave, response, enabled=False):
@@ -167,6 +171,7 @@ def fit_lrs2_dichroic(
     apply_grey_scale=True,
     scan_points=121,
     repair_orange_response=True,
+    shift_sign=1.0,
 ):
     """
     Fit a wavelength displacement of the LRS2-B dichroic response.
@@ -177,7 +182,12 @@ def fit_lrs2_dichroic(
 
     The response model is
 
-    ``R_new(lambda) = R_nominal(lambda - delta_lambda)``.
+    ``R_new(lambda) = R_nominal(lambda - shift_sign * delta_lambda)``.
+
+    With the default ``shift_sign=+1``, a positive fitted displacement moves
+    the response feature toward longer wavelengths. Set ``shift_sign=-1`` to
+    use the opposite physical convention while retaining the same positive
+    ``delta_lambda`` reporting convention.
 
     If the existing spectrum has already been calibrated using
     ``R_nominal``, the corrected spectrum is
@@ -216,7 +226,10 @@ def fit_lrs2_dichroic(
     repair_orange_response : bool, optional
         Fit a quadratic to the original Orange response from 4645 to
         4655 Angstrom and use its blueward extrapolation below 4645
-        Angstrom during the fit. The default leaves the response unchanged.
+        Angstrom during the fit. The current default is ``True``.
+    shift_sign : {1, -1}, optional
+        Sign convention used when sampling the shifted response. The default
+        is ``+1``.
 
     Returns
     -------
@@ -227,6 +240,9 @@ def fit_lrs2_dichroic(
     uv_data = _load_lrs2_spectrum(uv)
     orange_data = _load_lrs2_spectrum(orange)
 
+    if shift_sign not in (-1, 1):
+        raise ValueError("shift_sign must be either +1 or -1.")
+
     wave_uv = uv_data["wave"]
     wave_orange = orange_data["wave"]
 
@@ -235,11 +251,15 @@ def fit_lrs2_dichroic(
         wave_orange, orange_data["response"], enabled=repair_orange_response
     )
 
-    response_uv = _make_interp(wave_uv, response_uv_native)
-    response_orange_original_interp = _make_interp(
-        wave_orange, response_orange_original
+    response_uv = _make_interp(
+        wave_uv, response_uv_native, extrapolate=False
     )
-    response_orange = _make_interp(wave_orange, response_orange_repaired)
+    response_orange_original_interp = _make_interp(
+        wave_orange, response_orange_original, extrapolate=False
+    )
+    response_orange = _make_interp(
+        wave_orange, response_orange_repaired, extrapolate=False
+    )
 
     sky_uv = _make_interp(wave_uv, uv_data["sky"])
     sky_orange = _make_interp(wave_orange, orange_data["sky"])
@@ -292,6 +312,8 @@ def fit_lrs2_dichroic(
         & np.isfinite(response_orange_nominal)
         & (response_uv_nominal > 0)
         & (response_orange_nominal > 0)
+        & np.isfinite(response_orange_original_nominal)
+        & (response_orange_original_nominal > 0)
         & np.isfinite(throughput_uv)
         & np.isfinite(throughput_orange)
         & (throughput_uv >= throughput_floor)
@@ -328,11 +350,17 @@ def fit_lrs2_dichroic(
 
     def evaluate_delta(delta):
         """Evaluate the sky agreement for one dichroic shift."""
-        shifted_response_uv = response_uv(grid - delta)
-        shifted_response_orange = response_orange(grid - delta)
+        shifted_wave = grid - shift_sign * delta
+        shifted_response_uv = response_uv(shifted_wave)
+        shifted_response_orange = response_orange(shifted_wave)
 
         correction_uv = shifted_response_uv / response_uv_nominal
-        correction_orange = shifted_response_orange / response_orange_nominal
+        # The extracted Orange spectrum was calibrated with the original
+        # response. The repaired curve is the model for the shifted response,
+        # but it must retain the original response as the denominator.
+        correction_orange = (
+            shifted_response_orange / response_orange_original_nominal
+        )
 
         corrected_sky_uv = sky_uv_nominal * correction_uv
         corrected_sky_orange = sky_orange_nominal * correction_orange
@@ -467,7 +495,7 @@ def fit_lrs2_dichroic(
         wave = channel["wave"]
         nominal_response = channel["response"]
 
-        shifted_response = response_interp(wave - delta_lambda)
+        shifted_response = response_interp(wave - shift_sign * delta_lambda)
 
         valid = (
             np.isfinite(nominal_response)
@@ -591,12 +619,15 @@ def fit_lrs2_dichroic(
             "orange_fit_min": orange_fit_min,
             "repair_orange_response": repair_orange_response,
             "shift_bounds": shift_bounds,
+            "scale_bounds": scale_bounds,
+            "shift_sign": shift_sign,
             "throughput_floor": (throughput_floor),
             "success": bool(optimization.success),
             "message": optimization.message,
         },
         "diagnostic": {
             "wave": grid,
+            "orange_shifted_wave": grid - shift_sign * delta_lambda,
             "mask_before": mask_before,
             "mask_after": mask_after,
             "weight": weight,
@@ -768,7 +799,7 @@ def _plot_response_diagnostic(result):
             where=response_original != 0,
         )
 
-        sampled_wave = wave - delta
+        sampled_wave = wave - fit.get("shift_sign", 1.0) * delta
         extrapolated = (sampled_wave < np.nanmin(wave)) | (
             sampled_wave > np.nanmax(wave)
         )
