@@ -880,7 +880,7 @@ def main():
         fit_range=(4635.0, 4645.0),
         # Orange data below 4638 Angstrom is excluded from the fit.
         orange_fit_min=4638.0,
-        repair_orange_response=args.repair_orange_response,
+        repair_orange_response=True,
         shift_bounds=(-10.0, 12.0),
         scale_bounds=(0.95, 1.05),
         throughput_floor=0.02,
