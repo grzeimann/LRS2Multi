@@ -63,6 +63,7 @@ class LRS2Object:
         self.wave_window = wave_window
         self.sides = {}
         self.norms = {}
+        self.dichroic_fits = {}
         self.red_detect_channel = red_detect_channel
         self.blue_detect_channel = blue_detect_channel
         blue_dict = {'orange': 'uv', 'uv': 'orange'}
@@ -486,6 +487,121 @@ class LRS2Object:
                                        outer_radius=outer_radius,
                                        big_largex=big_largex,
                                        big_largey=big_largey)
+
+    @staticmethod
+    def _apply_dichroic_channel_correction(L, corrected):
+        """Apply one native-grid dichroic fit result to an LRS2Multi object."""
+        output_wave = np.asarray(corrected['wave'], dtype=float)
+        native_wave = np.asarray(L.wave, dtype=float)
+
+        def native_values(values):
+            return np.interp(
+                native_wave,
+                output_wave,
+                np.asarray(values, dtype=float),
+                left=np.nan,
+                right=np.nan,
+            )
+
+        def current_correction(values, spectrum):
+            current_wave = spectrum.spectral_axis.to_value(u.AA)
+            return np.interp(
+                current_wave,
+                output_wave,
+                np.asarray(values, dtype=float),
+                left=1.0,
+                right=1.0,
+            )
+
+        def corrected_spectrum(spectrum, correction):
+            factor = current_correction(correction, spectrum)
+            uncertainty = spectrum.uncertainty
+            if uncertainty is not None:
+                uncertainty = StdDevUncertainty(
+                    uncertainty.array * np.abs(factor)
+                )
+            return Spectrum1D(
+                spectral_axis=spectrum.spectral_axis,
+                flux=spectrum.flux * factor,
+                uncertainty=uncertainty,
+                mask=spectrum.mask,
+            )
+
+        science_correction = corrected['science_correction']
+        sky_correction = corrected['sky_correction']
+        L.spectrum = native_values(corrected['science'])
+        L.skyspectrum = native_values(corrected['sky'])
+        L.spectrum_error = (
+            np.abs(native_values(science_correction)) * L.spectrum_error
+        )
+        L.normcurve = native_values(corrected['response'])
+
+        # Keep both the extracted arrays and any already rectified or smoothed
+        # Spectrum1D products in sync. The fit itself always uses the native
+        # wavelength grid, which is also the grid on which normcurve is stored.
+        if hasattr(L, 'spec1D'):
+            L.spec1D = corrected_spectrum(L.spec1D, science_correction)
+        if hasattr(L, 'spec1Dsky'):
+            L.spec1Dsky = corrected_spectrum(L.spec1Dsky, sky_correction)
+
+        if hasattr(L, 'spec_ext'):
+            L.spec_ext[1] = L.spectrum
+            L.spec_ext[2] = L.skyspectrum
+            L.spec_ext[3] = L.spectrum_error
+            L.spec_ext[4] = L.spectrum_error
+            L.spec_ext[-1] = L.normcurve
+
+    def fit_lrs2_dichroic(self, **kwargs):
+        """Fit and apply the UV/Orange dichroic correction per exposure.
+
+        Call this after :meth:`extract_spectrum` and before combining the
+        spectra. Each UV/Orange pair in ``self.sides`` is fit independently.
+        The returned dictionary is also stored as ``self.dichroic_fits``;
+        each entry contains the fit diagnostics and corrected channel data
+        returned by :func:`fit_lrs2_dichroic`.
+
+        Parameters
+        ----------
+        **kwargs
+            Keyword arguments passed to ``fit_lrs2_dichroic``.
+
+        Returns
+        -------
+        dict
+            Fit results keyed by the observation name in ``self.sides``.
+        """
+        from scripts.dichroic_uv_orange_fit import (
+            fit_lrs2_dichroic as fit_function,
+        )
+
+        self.dichroic_fits = {}
+        for observation, channels in self.sides.items():
+            by_channel = {L.channel: L for L in channels}
+            uv = by_channel.get('uv')
+            orange = by_channel.get('orange')
+            if uv is None or orange is None:
+                continue
+
+            for channel in (uv, orange):
+                if (
+                    not hasattr(channel, 'spectrum')
+                    or not hasattr(channel, 'skyspectrum')
+                ):
+                    raise RuntimeError(
+                        'fit_lrs2_dichroic requires extract_spectrum() to be '
+                        f'run for {channel.channel} in {observation}.'
+                    )
+
+            result = fit_function(uv, orange, **kwargs)
+            self._apply_dichroic_channel_correction(uv, result['uv'])
+            self._apply_dichroic_channel_correction(orange, result['orange'])
+            self.dichroic_fits[observation] = result
+
+        if not self.dichroic_fits:
+            raise ValueError(
+                'No UV/Orange channel pairs were found in this LRS2Object.'
+            )
+        return self.dichroic_fits
 
     def calculate_norm(self, detwave=None, wave_window=None, func=np.nansum):
         '''
